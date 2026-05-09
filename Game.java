@@ -340,7 +340,7 @@ public class Game{
             playerPoint = points.calculatePoints();
             if(playerPoint > maxPoints){
                 maxPoints = playerPoint;
-                winners.clear();//remove all players idk how
+                winners.clear();
                 winners.add(p);
             } else if (playerPoint == maxPoints){
                 winners.add(p);
@@ -348,5 +348,4 @@ public class Game{
         }
         return winners;
     }
-
 }
