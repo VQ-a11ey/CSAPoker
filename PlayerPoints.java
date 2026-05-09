@@ -67,7 +67,29 @@ public class PlayerPoints extends Player{
         return false;
     }
     public boolean hasStraight(){
-
+        int[] ranks = new int[hand.size()];
+        for (int i = 0; i < hand.size(); i++){
+            ranks[i] = hand.get(i).getRank();
+        }
+        for (int i = 0; i < ranks.length - 1; i++){
+            for (int j = i + 1; j < ranks.length; j++){
+                if (ranks[i] > ranks[j]){
+                    int temp = ranks[i];
+                    ranks[i] = ranks[j];
+                    ranks[j] = temp;
+                }
+            }
+        } // above this line is sorting stuff maybe create a mehtod??? idk
+        int straight = 1;
+        for (int i = 0; i < ranks.length - 1; i++){
+            if (ranks[i] + 1 == ranks[i+1]){
+                straight++;
+                if (straight == 5){
+                    return true;
+                }
+            } else straight = 1;
+        }
+        return false;
     }
     public boolean hasFlush(){
         int[] ar = new int[4];
@@ -131,8 +153,41 @@ public class PlayerPoints extends Player{
         return hasStraight() && hasFlush();
     }
     public boolean hasRoyalFlush(){
+        if (hasFlush()){
+            return highestCardOfStraight()/15 == 14;
+        }
+        return false;
         
     }
+    public void sortingForStraights(int[] rank){
+        for (int i = 0; i < hand.size(); i++){
+            rank[i] = hand.get(i).getRank();
+        }
+        for (int i = 0; i < rank.length - 1; i++){
+            for (int j = i + 1; j < rank.length; j++){
+                if (rank[i] > rank[j]){
+                    int temp = rank[i];
+                    rank[i] = rank[j];
+                    rank[j] = temp;
+                }
+            }
+        } 
+    }
+    public int highestCardOfStraight(){ 
+        int[] ranks = new int[hand.size()];
+        sortingForStraights(ranks);
+        int straight = 1;
+        for (int i = 0; i < ranks.length - 1; i++){
+            if (ranks[i] + 1 == ranks[i+1]){
+                straight++;
+                if (straight == 5){
+                    return i * 15 + highestCardRank()/15;
+                }
+            } else straight = 1;
+        }
+        return 0;
+    }
+    //public int highestCardOfFlush(){ do we need this? also one for straightflush
     public int highestCardRank(){
         int max = hand.get(0).getRank();
         for (Card c: hand){
@@ -140,7 +195,7 @@ public class PlayerPoints extends Player{
                 max = c.getRank();
             }
         }
-        return 15;
+        return max * 15;
     }
     public int getPairRank(){
         int pair = 0;
@@ -156,7 +211,7 @@ public class PlayerPoints extends Player{
                 pair = rank;
             }
         }
-        return pair * 15 + highestCardRank();
+        return pair * 15 + highestCardRank()/15;
     }
     public int getThreeRank(){
         int three = 0;
@@ -172,7 +227,7 @@ public class PlayerPoints extends Player{
                 three = rank;
             }
         }
-        return three * 15 + highestCardRank();
+        return three * 15 + highestCardRank()/15;
     }
     public int getFourRank(){
         for (int i = 0; i < hand.size(); i++){
@@ -183,7 +238,7 @@ public class PlayerPoints extends Player{
                     count++;
                 }
             }
-            if (count == 4) return rank * 15 + highestCardRank();
+            if (count == 4) return rank * 15 + highestCardRank()/15
         }
         return 0;
     }
@@ -204,7 +259,7 @@ public class PlayerPoints extends Player{
             return 750 + highestCardRank();
         }
         if (hasStraight()){
-            return 600 + highestCardRank();
+            return 600 + highestCardOfStraight();
         }
         if (hasThreeOfAKind()){
             return 450 + getThreeRank();
