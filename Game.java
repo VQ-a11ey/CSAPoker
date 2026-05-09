@@ -333,7 +333,19 @@ public class Game{
     }
     public ArrayList<Player> findWinner(){
         ArrayList<Player> winners = new ArrayList<>();
-        // find winners
+        int maxPoints = -1;
+        for (Player p : players){
+            PlayerPoints points = new PlayerPoints(p.getCardOne(), p.getCardTwo(), cards);
+            int playerPoint = 0;
+            playerPoint = points.calculatePoints();
+            if(playerPoint > maxPoints){
+                maxPoints = playerPoint;
+                winners.clear();
+                winners.add(p);
+            } else if (playerPoint == maxPoints){
+                winners.add(p);
+            }
+        }
         return winners;
     }
 }
