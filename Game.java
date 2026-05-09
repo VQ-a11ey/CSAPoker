@@ -304,15 +304,27 @@ public class Game{
                     System.out.print(p.getName() + ": ");
                     p.printCards();
                 }
+                System.out.println("\nThe cards in the middle were: ");
+                for (Card c: cards){
+                    System.out.print(c.getName() + "    ");
+                }
                 System.out.println();
-                if (findWinner().size() > 1){
-                    //For each player.setchips(getPot()/findwinner.size())
+                System.out.println();
+                ArrayList<Player> winners = findWinner();
+                if (winners.size() > 1){
+                    for (Player p: winners){
+                        p.addChips(getPot()/(winners.size()));
+                        System.out.print( p + " ");
+                    }
+                    System.out.println(" are the winners!");
+                    resetPot();
                 } else{
-                    if (findWinner().size() == 0){
+                    if (winners.size() == 0){
                         System.out.println("findWinner is still under development.");
                         break;
                     }
-                    findWinner().get(0).addChips(getPot());
+                    winners.get(0).addChips(getPot());
+                    System.out.println(winners.get(0).getName() + " won the game!");
                     resetPot();
                 }
             } 
@@ -322,7 +334,7 @@ public class Game{
             }
             roundCount++;
             if (players.size() == 1){
-                System.out.println("Our winner is " + players.get(0).getName()+ "!");
+                System.out.println("The winner is " + players.get(0).getName()+ "!");
                 break;
             }
             startingPlayer ++;
@@ -348,4 +360,5 @@ public class Game{
         }
         return winners;
     }
+
 }
