@@ -238,7 +238,7 @@ public class PlayerPoints extends Player{
                     count++;
                 }
             }
-            if (count == 4) return rank * 15 + highestCardRank()/15;
+            if (count == 4) return rank * 15 + highestCardRank()/15
         }
         return 0;
     }
