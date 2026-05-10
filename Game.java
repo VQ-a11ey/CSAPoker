@@ -304,15 +304,30 @@ public class Game{
                     System.out.print(p.getName() + ": ");
                     p.printCards();
                 }
+                System.out.println("\nThe cards in the middle were: ");
+                for (Card c: cards){
+                    System.out.print(c.getName() + "    ");
+                }
                 System.out.println();
-                if (findWinner().size() > 1){
-                    //For each player.setchips(getPot()/findwinner.size())
+                System.out.println();
+                ArrayList<Player> winners = findWinner();
+                if (winners.size() > 1){
+                    for (Player p: winners){
+                        p.addChips(getPot()/(winners.size()));
+                        System.out.print( p + " ");
+                    }
+                    System.out.println(" are the winners!");
+                    resetPot();
                 } else{
-                    if (findWinner().size() == 0){
+                    if (winners.size() == 0){
                         System.out.println("findWinner is still under development.");
                         break;
                     }
-                    findWinner().get(0).addChips(getPot());
+                    Player winner = winners.get(0);
+                    winner.addChips(getPot());
+                    PlayerPoints points = new PlayerPoints(winner.getCardOne(), winner.getCardTwo(), cards);
+                    int playerPoint = points.calculatePoints();
+                    System.out.println(winner.getName() + " won the game with a " + handType(playerPoint) +"!");
                     resetPot();
                 }
             } 
@@ -322,7 +337,7 @@ public class Game{
             }
             roundCount++;
             if (players.size() == 1){
-                System.out.println("Our winner is " + players.get(0).getName()+ "!");
+                System.out.println("The winner is " + players.get(0).getName()+ "!");
                 break;
             }
             startingPlayer ++;
@@ -347,5 +362,37 @@ public class Game{
             }
         }
         return winners;
+    }
+    public String handType(int points){
+        if (points == 1350){
+            return "Royal Flush";
+        }
+        if (points >= 1200){
+            return "Straight Flush";
+        }
+        if (points >= 1050){
+            return "Four of a Kind";
+        }
+        if (points >= 900){
+            return "Full House";
+        }
+        if (points >= 750){
+            return "Flush";
+        }
+        if (points >= 600){
+            return "Straight";
+        }
+        if (points >= 450){
+            return "Three of a Kind";
+        }
+        if (points >= 300){
+            return "Two Pair";
+        }
+        if (points >= 150){
+            return "Pair";
+        }
+        else{
+            return "High Card";
+        }
     }
 }
