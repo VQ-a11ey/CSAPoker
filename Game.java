@@ -299,6 +299,11 @@ public class Game {
                 startingPlayer = 0;
             }
         }
+        System.out.println("Do you want to play another round? Enter yes to continue playing. ");
+        String decision = sc.next().toLowerCase();
+        if (decision.equals("yes")){
+            runEntireGame();
+        }
     }
 
     public ArrayList<Player> findWinner() {
