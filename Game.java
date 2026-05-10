@@ -322,31 +322,31 @@ public class Game {
     public String handType(Player winner) {
         PlayerPoints pointSystem = new PlayerPoints(winner.getCardOne(), winner.getCardTwo(), cards);
         int points = pointSystem.calculatePoints();
-        if (points == 1350) {
+        if (points == 2250) {
             return "Royal Flush";
         }
-        if (points >= 1200) {
+        if (points >= 2000) {
             return "Straight Flush";
         }
-        if (points >= 1050) {
+        if (points >= 1750) {
             return "Four of a Kind";
         }
-        if (points >= 900) {
+        if (points >= 1500) {
             return "Full House";
         }
-        if (points >= 750) {
+        if (points >= 1250) {
             return "Flush";
         }
-        if (points >= 600) {
+        if (points >= 1000) {
             return "Straight";
         }
-        if (points >= 450) {
+        if (points >= 750) {
             return "Three of a Kind";
         }
-        if (points >= 300) {
+        if (points >= 500) {
             return "Two Pair";
         }
-        if (points >= 150) {
+        if (points >= 250) {
             return "Pair";
         } else {
             return "High Card";
