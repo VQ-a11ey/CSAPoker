@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 
 public class PlayerPoints extends Player{
-    //should we do this??? idk
     private int points;
     private ArrayList<Card> hand;
 
@@ -244,31 +243,31 @@ public class PlayerPoints extends Player{
     }
     public int calculatePoints(){
         if (hasRoyalFlush()){
-            return 1350;
+            return 2250;
         }
         if (hasStraightFlush()){
-            return 1200 + highestCardRank();
+            return 2000 + highestCardRank();
         }
         if (hasFourOfAKind()){
-            return 1050 + getFourRank();
+            return 1750 + getFourRank();
         }
         if (hasFullHouse()){
-            return 900 + getThreeRank();
+            return 1500 + getThreeRank();
         }
         if (hasFlush()){
-            return 750 + highestCardRank();
+            return 1250 + highestCardRank();
         }
         if (hasStraight()){
-            return 600 + highestCardOfStraight();
+            return 1000 + highestCardOfStraight();
         }
         if (hasThreeOfAKind()){
-            return 450 + getThreeRank();
+            return 750 + getThreeRank();
         }
         if (hasTwoPair()){
-            return 300 + getPairRank();
+            return 500 + getPairRank();
         }
         if (hasPair()){
-            return 150 + getPairRank();
+            return 250 + getPairRank();
         }
         return highestCardRank();
     }
