@@ -9,6 +9,7 @@ public class Game {
     private int smallBlind;
     private int bigBlind;
     private int startingPlayer = 2;
+    private ArrayList<Player> foldedPlayers;
 
     public Game(int numPlayers) {
         deck = new Deck();
@@ -28,6 +29,7 @@ public class Game {
         cards = new ArrayList<Card>();
         smallBlind = 1;
         bigBlind = 2;
+        this.foldedPlayers = new ArrayList<Player>();
     }
 
     public void dealCards() {
@@ -82,6 +84,7 @@ public class Game {
     }
 
     public int fold(int index) {
+        foldedPlayers.add(players.get(index));
         players.remove(index);
         if (index <= startingPlayer) {
             startingPlayer--;
@@ -299,9 +302,12 @@ public class Game {
                 startingPlayer = 0;
             }
         }
-         //missing some stuff like adding back the people that folded....
+
         System.out.println("Do you want to play another round? Enter yes to continue playing. ");
         String decision = sc.next().toLowerCase();
+        for (Player fol: foldedPlayers){
+            players.add(fol);
+        }
         if (decision.equals("yes")){
             for (Player p: players){
                 if (p.getChips() == 0){
