@@ -299,9 +299,19 @@ public class Game {
                 startingPlayer = 0;
             }
         }
+         //missing some stuff like adding back the people that folded....
         System.out.println("Do you want to play another round? Enter yes to continue playing. ");
         String decision = sc.next().toLowerCase();
         if (decision.equals("yes")){
+            for (Player p: players){
+                if (p.getChips() == 0){
+                    System.out.println("Do you want to get a loan of 1000 chips cuz ur broke? ");
+                    String answer = sc.next().toLowerCase();
+                    if (answer.equals("yes")){
+                        p.addChips(1000);
+                    }
+                }
+            }
             runEntireGame();
         }
     }
