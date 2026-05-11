@@ -8,28 +8,32 @@ public class Game {
     private ArrayList<Card> cards;
     private int smallBlind;
     private int bigBlind;
-    private int startingPlayer = 2;
-    private ArrayList<Player> foldedPlayers;
+    private int startingPlayer = 0; // for within each round
+    private int overallStartingPlayer = 0; // for entire game, changes each round
+    private ArrayList<Player> playersReference;
 
     public Game(int numPlayers) {
         deck = new Deck();
-        players = new ArrayList<Player>(numPlayers);
+        playersReference = new ArrayList<Player>();
+        players = new ArrayList<Player>();
         // initialize player stuff
         for (int i = 0; i < numPlayers; i++) {
-            players.add(new Player());
-            players.get(i).addChips(1000);
+            playersReference.add(new Player());
+            playersReference.get(i).addChips(1000);
         }
         sc = new Scanner(System.in);// ?
         for (int i = 0; i < numPlayers; i++) {
             System.out.print("Enter the name of player " + (i + 1) + ": ");
-            players.get(i).setName(sc.next());
+            playersReference.get(i).setName(sc.next());
+        }
+        for (Player p: playersReference){
+            players.add(p);
         }
         System.out.println();
         pot = 0;
         cards = new ArrayList<Card>();
         smallBlind = 1;
         bigBlind = 2;
-        this.foldedPlayers = new ArrayList<Player>();
     }
 
     public void dealCards() {
@@ -51,16 +55,18 @@ public class Game {
         pot = 0;
     }
 
-    public void printChipsInfo() {
+    public void printChipsInfo(int current) {
         System.out.println("There are " + pot + " chips in the pot.");
         for (Player p : players) {
             System.out.println(p.getName() + " has " + p.getChips() + " chips");
         }
+        System.out.println("The current bet is " + current);
         System.out.println();
+
     }
 
     public void printMiddleCards() {
-        if (cards.size() == 0){
+        if (cards.size() == 0) {
             System.out.println("No cards have been revealed yet.");
             return;
         }
@@ -84,13 +90,15 @@ public class Game {
     }
 
     public int fold(int index) {
-        foldedPlayers.add(players.get(index));
         players.remove(index);
-        if (index <= startingPlayer) {
+        if (index < startingPlayer) {
             startingPlayer--;
             if (startingPlayer < 0) {
                 startingPlayer += players.size();
             }
+        }
+        if (startingPlayer >= players.size()) {
+            //startingPlayer -= players.size();
         }
         index--;
         if (index < 0) {
@@ -137,22 +145,25 @@ public class Game {
 
     public void runRound(int bet) {
         int current = bet;
-        ArrayList<Integer> putIn = new ArrayList<>(); // shows how much each player has put in so far to keep track of
-                                                      // how much to call
-        for (int i = 0; i < players.size(); i++) {
-            putIn.add(0);
-        }
+        boolean didIt = false; // variable saying if in first betting round if bigblind already went
         if (bet != 0) {
-            players.get(0).bet(smallBlind);
+            players.get(startingPlayer).bet(smallBlind);
             addToPot(smallBlind);
-            System.out.println(players.get(0).getName() + " has just paid the small blind of " + smallBlind);
-            players.get(1).bet(bigBlind);
+            System.out.println(players.get(startingPlayer).getName() + " has just paid the small blind of " + smallBlind);
+            int next = startingPlayer + 1;
+            if (next >= players.size()){
+                next -= players.size();
+            }
+            players.get(next).bet(bigBlind);
             addToPot(bigBlind);
-            System.out.println(players.get(1).getName() + " has just paid the big blind of " + bigBlind + "\n");
+            System.out.println(players.get(next).getName() + " has just paid the big blind of " + bigBlind + "\n");
 
             for (Player p : players) {
                 checkHand(p);
             }
+        }
+        if (bet != 0) {
+            startingPlayer += 2; // first betting round starts with person after big blind
         }
         for (int i = 0; i < players.size(); i++) {
             int index = startingPlayer + i;
@@ -160,7 +171,7 @@ public class Game {
                 index -= players.size();
             }
             Player p = players.get(index);
-            printChipsInfo();
+            printChipsInfo(current);
             if (current == 0) {
                 String decision = makeDecision(p, new ArrayList<>(List.of("raise", "fold", "check")));
                 System.out.println();
@@ -169,6 +180,15 @@ public class Game {
                 } else if (decision.equals("fold")) {
                     i--;
                     index = fold(index);
+                    if (players.size() == 1) {
+                        break;
+                    }
+                    if (i == players.size() - 1 && p.getBet() > players.get(startingPlayer).getBet()) { // go back to
+                                                                                                        // match raise
+                        i = -1;
+                        continue;
+                    }
+                    continue;
                 } else if (decision.equals("raise")) {
                     current = raise(p, current);
                 }
@@ -179,7 +199,7 @@ public class Game {
                 String decision = "";
                 if (current == p.getBet()) {
                     decision = makeDecision(p, new ArrayList<>(List.of("raise", "fold", "check")));
-                    
+
                 } else {
                     decision = makeDecision(p, new ArrayList<>(List.of("raise", "fold", "call")));
                 }
@@ -187,6 +207,15 @@ public class Game {
                 if (decision.equals("fold")) {
                     i--;
                     index = fold(index);
+                    if (players.size() == 1) {
+                        break;
+                    }
+                    if (i == players.size() - 1 && p.getBet() > players.get(startingPlayer).getBet()) { // go back to
+                                                                                                        // match raise
+                        i = -1;
+                        continue;
+                    }
+                    continue;
                 } else if (decision.equals("raise")) {
                     current = raise(p, current);
                 } else if (decision.equals("call")) {
@@ -199,11 +228,17 @@ public class Game {
             if (players.size() == 1) {
                 break;
             }
-            if (i == players.size() - 1 && p.getBet() > players.get(startingPlayer).getBet()) { // go back to match raise
+            int toCheck = startingPlayer;
+            if (toCheck >= players.size()){
+                toCheck -= players.size();
+            }
+            if (i == players.size() - 1 && p.getBet() > players.get(toCheck).getBet()) { // go back to match
+                                                                                                // raise
                 i = -1;
                 continue;
             }
-            if (i == players.size() - 2 && bet != 0) {
+            if (i == players.size() - 2 && bet != 0 && !didIt) {
+                didIt = true;
                 continue;
             }
             int check = index + 1;
@@ -214,7 +249,9 @@ public class Game {
                 break;
             }
         }
-
+        if (bet != 0) {
+            startingPlayer -= 2;
+        }
         if (players.size() == 1) {
             return;
         }
@@ -222,8 +259,16 @@ public class Game {
 
     public void runEntireGame() {
         int roundCount = 0;
-        System.out.println("At any point in the game, you can enter 'hand' to check your hand and 'middle' to check the cards in the middle.");
-        System.out.println("Type anything to get the round started.");
+        System.out.println("A few notes before the round starts!");
+        System.out.println("The following are each player's chip amounts as of the start of this round: ");
+        for (Player p: players){
+            System.out.println(p.getName() + " has " + p.getChips() + " chips");
+        }
+        System.out.println();
+        System.out.println(
+                "At any point in the game, you can enter 'hand' to check your hand and 'middle' to check the cards in the middle.");
+        System.out.println("Note that in this game, inputting the raise amount as X means 'raise to X' rather than 'raise by X'.");
+        System.out.println("\nType anything to acknowledge these notes and get the round started.");
         sc.next();
         System.out.println();
         while (roundCount <= 4 && players.size() >= 2) {
@@ -273,7 +318,8 @@ public class Game {
                         System.out.print(p.getName() + " ");
                     }
                     System.out.println("are the winners!");
-                    System.out.println("They each had a " + handType(winners.get(0)) + " and each won " + winnings + " chips.");
+                    System.out.println(
+                            "They each had a " + handType(winners.get(0)) + " and each won " + winnings + " chips.");
                     resetPot();
                 } else {
                     if (winners.size() == 0) {
@@ -282,7 +328,8 @@ public class Game {
                     }
                     Player winner = winners.get(0);
                     winner.addChips(getPot());
-                    System.out.println(winner.getName() + " won the game with a " + handType(winner) + " and won " + getPot() + " chips!");
+                    System.out.println(winner.getName() + " won the game with a " + handType(winner) + " and won "
+                            + getPot() + " chips!");
                     resetPot();
                 }
             } else {
@@ -297,27 +344,32 @@ public class Game {
                 resetPot();
                 break;
             }
-            startingPlayer++;
-            if (startingPlayer >= players.size()) {
-                startingPlayer = 0;
-            }
         }
 
         System.out.println("Do you want to play another round? Enter yes to continue playing. ");
         String decision = sc.next().toLowerCase();
-        for (Player fol: foldedPlayers){
-            players.add(fol);
+        players = new ArrayList<Player>();
+        for (Player p: playersReference){
+            p.setBet(0);
+            players.add(p);
         }
-        if (decision.equals("yes")){
-            for (Player p: players){
-                if (p.getChips() == 0){
-                    System.out.println("Do you want to get a loan of 1000 chips cuz ur broke? ");
+        if (decision.equals("yes")) {
+            for (Player p : players) {
+                if (p.getChips() == 0) {
+                    System.out.println(p.getName() + ", do you want to get a loan of 1000 chips cuz ur broke? ");
                     String answer = sc.next().toLowerCase();
-                    if (answer.equals("yes")){
+                    if (answer.equals("yes")) {
                         p.addChips(1000);
                     }
                 }
             }
+            overallStartingPlayer++;
+            if (overallStartingPlayer >= players.size()) {
+                overallStartingPlayer = 0;
+            }
+            startingPlayer = overallStartingPlayer;
+            deck = new Deck();
+            cards = new ArrayList<Card>();
             runEntireGame();
         }
     }
