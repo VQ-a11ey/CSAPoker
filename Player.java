@@ -48,7 +48,10 @@ public class Player {
     public void addChips(int added) {
         chips += added;
     }
-
+    public void setBet(int bet){
+        this.bet = bet;
+    }
+    
     public int[] bet(int toBet) { //will return [current, addToPot] values
         int moreChips = toBet - bet;
         if (moreChips <= chips) {
