@@ -1,39 +1,46 @@
+package com.example;
 import java.util.*;
 
 public class Game {
     private Deck deck;
     private ArrayList<Player> players;
-    private Scanner sc;
     private int pot;
-    private ArrayList<Card> cards;
     private int smallBlind;
     private int bigBlind;
-    private int startingPlayer = 0; // for within each round
-    private int overallStartingPlayer = 0; // for entire game, changes each round
-    private ArrayList<Player> playersReference;
+    private ArrayList<Card> cards;
+    private int startingPlayer = 0; // for entire game
+    private int roundCount;
+    private int current;
+    private int currentPlayer = 0; // for each round
 
-    public Game(int numPlayers) {
+    public Game(ArrayList<String> playerNames) {
         deck = new Deck();
-        playersReference = new ArrayList<Player>();
         players = new ArrayList<Player>();
         // initialize player stuff
-        for (int i = 0; i < numPlayers; i++) {
-            playersReference.add(new Player());
-            playersReference.get(i).addChips(1000);
-        }
-        sc = new Scanner(System.in);// ?
-        for (int i = 0; i < numPlayers; i++) {
-            System.out.print("Enter the name of player " + (i + 1) + ": ");
-            playersReference.get(i).setName(sc.next());
-        }
-        for (Player p: playersReference){
+        for (int i = 0; i < playerNames.size(); i++) {
+            Player p = new Player();
+            p.setName(playerNames.get(i));
+            p.addChips(1000);
             players.add(p);
         }
-        System.out.println();
+        
         pot = 0;
         cards = new ArrayList<Card>();
+        current = 0;
         smallBlind = 1;
         bigBlind = 2;
+        roundCount = 0;
+    }
+
+    public void resetRound(){
+        deck = new Deck();
+        cards.clear();
+        pot = 0;
+        smallBlind = 1;
+        bigBlind = 2;
+        roundCount = 0;
+
+        dealCards();
     }
 
     public void dealCards() {
@@ -51,10 +58,7 @@ public class Game {
         return pot;
     }
 
-    public void resetPot() {
-        pot = 0;
-    }
-
+/* 
     public void printChipsInfo(int current) {
         System.out.println("There are " + pot + " chips in the pot.");
         for (Player p : players) {
@@ -88,8 +92,27 @@ public class Game {
             System.out.println();
         }
     }
-
-    public int fold(int index) {
+*/
+    public void foldButton(){
+        players.remove(currentPlayer);
+        if (currentPlayer < startingPlayer) {
+            startingPlayer--;
+            if (startingPlayer < 0) {
+                startingPlayer += players.size();
+            }
+        }
+        if (currentPlayer >= players.size()) {
+            currentPlayer = 0;
+        }
+        if (players.size() == 1){
+            roundCount = 4;
+            players.get(0).addChips(pot);
+            return;
+        }
+        nextPlayer();
+    }
+/*
+public int fold(int index) {
         players.remove(index);
         if (index < startingPlayer) {
             startingPlayer--;
@@ -106,8 +129,16 @@ public class Game {
         }
         return index;
     }
-
-    public int raise(Player p, int current) { // returns what current will be set to
+*/
+    public void raiseButton(int amount){
+        Player p = players.get(currentPlayer);
+        int[] toUpdate = p.bet(amount);
+        current = toUpdate[0];
+        addToPot(toUpdate[1]);
+        nextPlayer();
+    }
+/*
+ public int raise(Player p, int current) { // returns what current will be set to
         int input = -1;
         while (input <= current) { // nextline?????
             System.out.print("input raise amount (integer): ");
@@ -142,8 +173,54 @@ public class Game {
         }
         return decision;
     }
+*/
 
-    public void runRound(int bet) {
+    public void checkButton(){
+        nextPlayer();
+    }
+
+    public void callButton(){
+        Player p = players.get(currentPlayer);
+        int[] updateTo = p.bet(current);
+        addToPot(updateTo[1]);
+        nextPlayer();
+    }
+    
+    public void nextPlayer(){
+        currentPlayer++;
+        if (currentPlayer > players.size()){
+            currentPlayer = 0;
+            nextRound();
+        }
+    }
+
+    public void nextRound(){
+        //bigblind and small blind
+        roundCount++;
+        current = 0;
+        for (Player p: players){
+            p.setBet(0);
+        }
+        if (roundCount == 1){
+            for (int i = 0; i < 3; i++) {
+                    cards.add(deck.chooseCard());
+                }
+        } else if (roundCount == 2) {
+                cards.add(deck.chooseCard());
+        } else if (roundCount == 3) {
+            cards.add(deck.chooseCard());
+        } else if (roundCount == 4){
+            ArrayList<Player> winners = findWinner();
+            if (winners.size() > 0){
+                int winnings = pot / winners.size();
+                for (Player p : winners){
+                    p.addChips(winnings);
+                }
+            }
+        } 
+    }
+
+/* public void runRound(int bet) {
         int current = bet;
         boolean didIt = false; // variable saying if in first betting round if bigblind already went
         if (bet != 0) {
@@ -373,6 +450,8 @@ public class Game {
             runEntireGame();
         }
     }
+*/
+    
 
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
@@ -424,5 +503,20 @@ public class Game {
         } else {
             return "High Card";
         }
+    }
+    public ArrayList<Player> getPlayers() {
+        return players;
+    }
+    public Player getCurrentPlayer(){
+        return players.get(currentPlayer);
+    }
+    public ArrayList<Card> getMiddleCards(){
+        return cards;
+    }
+    public int getCurrent(){
+        return current;
+    }
+    public int getRoundCount(){
+        return roundCount;
     }
 }
