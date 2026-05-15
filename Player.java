@@ -1,3 +1,4 @@
+package com.example;
 public class Player {
     String name;
     int chips;
@@ -33,6 +34,10 @@ public class Player {
         return bet;
     }
 
+    public boolean isAllIn() {
+        return chips == 0;
+    }
+
     public void setCardOne(Card one) {
         cardOne = one;
     }
@@ -62,7 +67,7 @@ public class Player {
         } else { // all in
             System.out.println(name + " is going all in!");
             bet += chips;
-            int[] result = {chips + bet, chips};
+            int[] result = {bet, chips};
             chips = 0;
             return result;
         }
