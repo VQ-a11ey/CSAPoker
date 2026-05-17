@@ -39,7 +39,7 @@ public class Game {
         bigBlind = 2;
         roundCount = 0;
         dealCards();
-        postBlindsSetFirstPlayer();
+        setFirstPlayer();
     }
 
     public void resetRound(){
@@ -58,56 +58,29 @@ public class Game {
             p.setBet(0);
         }
         dealCards();
-        postBlindsSetFirstPlayer();
+        setFirstPlayer();
         
     }
-    private int smallBlindIndex(){
-        if (players.size() == 2) {
-            return dealer;
+
+    private void setFirstPlayer(){
+        int small = (dealer + 1) % players.size();
+        int big = (dealer + 2) % players.size();
+        if (players.size() == 2){ // different with two players (heads up)
+            small = dealer;
+            big = (dealer + 1) % players.size();
         }
-        return (dealer + 1) % players.size();
-    }
 
-    private int bigBlindIndex(){
-        if (players.size() == 2) {
-            return (dealer + 1) % players.size();
-        }
-        return (dealer + 2) % players.size();
-    }
+        int[] smallUpdates = players.get(small).bet(smallBlind);
+        int[] bigUpdates = players.get(big).bet(bigBlind);
 
-    private int firstPreFlopPlayer(){
-        if (players.size() == 2) {
-            return dealer;
-        }
-        return (dealer + 3) % players.size();
-    }
-
-    private int firstPostFlopPlayer(){
-        return firstActivePlayerAfterDealer();
-    }
-
-    private int firstActivePlayerAfterDealer(){
-        for (int i = 1; i <= playersReference.size(); i++){
-            Player p = playersReference.get((dealer + i) % playersReference.size());
-            int activeIndex = players.indexOf(p);
-            if (activeIndex != -1 && !p.isAllIn()){
-                return activeIndex;
-            }
-        }
-        return 0;
-    }
-    private void postBlindsSetFirstPlayer(){
-        int small = smallBlindIndex();
-        int big = bigBlindIndex();
-
-        int[] smallBet = players.get(small).bet(smallBlind);
-        int[] bigBet = players.get(big).bet(bigBlind);
-
-        addToPot(smallBet[1]);
-        addToPot(bigBet[1]);
+        addToPot(smallUpdates[1]);
+        addToPot(bigUpdates[1]);
 
         current = bigBlind;
-        firstPlayer = firstPreFlopPlayer();
+        firstPlayer = (dealer + 3) % players.size();
+        if (players.size() == 2){
+            firstPlayer = dealer;
+        }
         currentPlayer = firstPlayer;
         lastRaiser = players.get(firstPlayer);
     }
@@ -176,9 +149,9 @@ public class Game {
         return !players.get(currentPlayer).isAllIn() && getAmountToCall() > 0;
     }
 
-    public boolean canRaise(){
+    public boolean canRaiseTo(int amount){
         Player p = players.get(currentPlayer);
-        return !p.isAllIn() && p.getChips() > getAmountToCall();
+        return !p.isAllIn() && amount > current && amount <= p.getChips() + p.getBet();
     }
 
     public MoveResult fold(){
@@ -211,7 +184,7 @@ public class Game {
     }
 
     public MoveResult raise(int amount){
-        if (amount <= current || players.get(currentPlayer).isAllIn()) return MoveResult.INVALID_RAISE;
+        if (!canRaiseTo(amount)) return MoveResult.INVALID_RAISE;
         Player p = players.get(currentPlayer);
         int oldCurrent = current;
         int[] toUpdate = p.bet(amount);
@@ -227,10 +200,7 @@ public class Game {
     }
 
     public MoveResult check(){
-        if (players.get(currentPlayer).isAllIn()){
-            return MoveResult.INVALID_CHECK;
-        }
-        if (current > players.get(currentPlayer).getBet()){
+        if (!canCheck()){
             return MoveResult.INVALID_CHECK;
         }
         return nextPlayer();
@@ -238,10 +208,7 @@ public class Game {
 
     public MoveResult call(){
         Player p = players.get(currentPlayer);
-        if (p.isAllIn()){
-            return MoveResult.INVALID_CALL;
-        }
-        if (p.getBet() >= current){
+        if (!canCall()){
             return MoveResult.INVALID_CALL;
         }
         int[] updateTo = p.bet(current);
@@ -275,10 +242,19 @@ public class Game {
         for (Player p: players){
             p.setBet(0);
         }
-        if (roundCount == 1){
-            firstPlayer = firstPostFlopPlayer();
+        if (roundCount >= 1 && roundCount <= 3){
+            firstPlayer = 0;
+            for (int i = 1; i <= playersReference.size(); i++){
+                Player p = playersReference.get((dealer + i) % playersReference.size());
+                int activeIndex = players.indexOf(p);
+                if (activeIndex != -1 && !p.isAllIn()){
+                    firstPlayer = activeIndex;
+                    break;
+                }
+            }
             currentPlayer = firstPlayer;
-
+        }
+        if (roundCount == 1){
             for (int i = 0; i < 3; i++) {
                 cards.add(deck.chooseCard());
             }
