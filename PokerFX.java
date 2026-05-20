@@ -67,8 +67,8 @@ public class PokerFX extends Application {
         Label prompt = new Label("How many players? ");
         prompt.setStyle("-fx-text-fill: white;");
         TextField numberOfPlayers = new TextField();
-        numberOfPlayers.setPromptText("Enter number of players");
-        numberOfPlayers.setMaxWidth(205);
+        numberOfPlayers.setPromptText("# of players");
+        numberOfPlayers.setMaxWidth(125);
         Button startGame = new Button("Start");
 
         VBox root = new VBox(10);
@@ -218,7 +218,7 @@ public class PokerFX extends Application {
                 return;
             try {
                 int amount = Integer.parseInt(raiseField.getText());
-                if (!game.canRaiseBy(amount)) {
+                if (!game.canRaiseBy(amount + game.getAmountToCall())) {
                     commentary.setText("ur too broke");
                     return;
                 }
@@ -373,7 +373,7 @@ public class PokerFX extends Application {
             }
         }
         if (brokePeople.isEmpty()){
-            refreshUI(); // is this how to restart the round? im not sure 
+            //refreshUI(); // is this how to restart the round? im not sure 
             return;
         }
         // show loan shark for broke people
@@ -392,7 +392,7 @@ public class PokerFX extends Application {
             shark.setFitHeight(150);
             shark.setPreserveRatio(true);
             Label title = new Label(broke.getName() + " i see ur broke haha");
-            Label message = new Label("Oh no! you don't have anymore money... do you want me to loan you some (1000) ???");
+            Label message = new Label("Oh no! you don't have anymore money... do you want me to loan you some (1000) ??? (if you say no, you will be out of the game :C)");
             message.setStyle("-fx-font-size: 14px; -fx-text-alignment: center;");
             message.setWrapText(true);
             message.setMaxWidth(300);
@@ -400,12 +400,14 @@ public class PokerFX extends Application {
             Button confirmButton = new Button("yes");
             confirmButton.setStyle("-fx-font-size: 14px; -fx-text-fill: white; -fx-background-color: #46d560");
             Button denyButton = new Button("i'd rather not :C ");
-            confirmButton.setStyle("-fx-font-size: 14px; -fx-text-fill: white; -fx-background-color: #862626");
+            denyButton.setStyle("-fx-font-size: 14px; -fx-text-fill: white; -fx-background-color: #862626");
             confirmButton.setOnAction(e -> {
                 broke.addChips(1000);
+                refreshUI();
                 loanStage.close();
             });
             denyButton.setOnAction(e-> {
+                game.setInactive(broke);
                 loanStage.close();
             });
              HBox buttons = new HBox(14, confirmButton, denyButton);
