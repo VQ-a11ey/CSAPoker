@@ -67,7 +67,7 @@ public class PokerFX extends Application {
         Label prompt = new Label("How many players? ");
         prompt.setStyle("-fx-text-fill: white;");
         TextField numberOfPlayers = new TextField();
-        numberOfPlayers.setPromptText("# of players");
+        numberOfPlayers.setPromptText("2 - 6 players");
         numberOfPlayers.setMaxWidth(125);
         Button startGame = new Button("Start");
 
@@ -91,6 +91,10 @@ public class PokerFX extends Application {
                 numOfPlayers = Integer.parseInt(numberOfPlayers.getText().trim());
                 if (numOfPlayers < 2) {
                     throw new IllegalArgumentException();
+                }
+                if (numOfPlayers > 6) {
+                    prompt.setText("Too many players! Max is 6.");
+                    return;
                 }
             } catch (Exception ex) {
                 prompt.setText("Not enough players! Oh no!");
@@ -222,7 +226,12 @@ public class PokerFX extends Application {
                     commentary.setText("ur too broke");
                     return;
                 }
-                commentary.setText(game.getCurrentPlayer().getName() + " raised by " + amount);
+                if (amount + game.getAmountToCall() >= game.getCurrentPlayer().getChips()){
+                    commentary.setText(game.getCurrentPlayer().getName() + " went all in with a raise!");
+                }
+                else{
+                    commentary.setText(game.getCurrentPlayer().getName() + " raised by " + amount);
+                }
                 game.raise(amount);
                 raiseBox.setVisible(false);
                 raiseBox.setManaged(false);
@@ -350,6 +359,7 @@ public class PokerFX extends Application {
                 }
                 loanCommentary.setText(p.getName() + " borrowed " + amount);
                 p.addChips(amount);
+                p.addLoan();
                 loanStuff.setVisible(false);
                 loanStuff.setManaged(false);
                 loanField.clear();
