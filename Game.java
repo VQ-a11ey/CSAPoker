@@ -6,8 +6,8 @@ public class Game {
     private ArrayList<Player> players;
     private ArrayList<Player> playersReference;
     private int pot;
-    private int smallBlind;
-    private int bigBlind;
+    private int smallBlind = 1;
+    private int bigBlind = 2;
     private ArrayList<Card> cards;
     private int firstPlayer = 0; // first player to act in the current betting round
     private int roundCount;
@@ -35,8 +35,6 @@ public class Game {
         }
         pot = 0;
         cards = new ArrayList<Card>();
-        smallBlind = 1;
-        bigBlind = 2;
         roundCount = 0;
         dealCards();
         setFirstPlayer();
@@ -51,8 +49,6 @@ public class Game {
         deck = new Deck();
         cards.clear();
         pot = 0;
-        smallBlind = 1;
-        bigBlind = 2;
         roundCount = 0;
         for (Player p: players){
             p.setBet(0);
@@ -126,6 +122,7 @@ public class Game {
             cards.add(deck.chooseCard());
         }
 
+        /*
         ArrayList<Player> winners = findWinner();
         if (winners.size() > 0){
             int winnings = pot / winners.size();
@@ -137,6 +134,7 @@ public class Game {
         }
 
         pot = 0;
+        */
         roundCount = 4;
         return MoveResult.HAND_ENDED;
     }
@@ -149,9 +147,9 @@ public class Game {
         return !players.get(currentPlayer).isAllIn() && getAmountToCall() > 0;
     }
 
-    public boolean canRaiseTo(int amount){
+    public boolean canRaiseBy(int amount){
         Player p = players.get(currentPlayer);
-        return !p.isAllIn() && amount > current && amount <= p.getChips() + p.getBet();
+        return !p.isAllIn() && amount <= p.getChips();
     }
 
     public MoveResult fold(){
@@ -170,8 +168,8 @@ public class Game {
         }
         if (players.size() == 1){
             roundCount = 3;
-            players.get(0).addChips(pot);
-            pot = 0;
+            //players.get(0).addChips(pot);
+            //pot = 0;
             return MoveResult.HAND_ENDED;
         }
         else if (end){
@@ -184,7 +182,7 @@ public class Game {
     }
 
     public MoveResult raise(int amount){
-        if (!canRaiseTo(amount)) return MoveResult.INVALID_RAISE;
+        if (!canRaiseBy(amount)) return MoveResult.INVALID_RAISE;
         Player p = players.get(currentPlayer);
         int oldCurrent = current;
         int[] toUpdate = p.bet(amount);
@@ -194,7 +192,7 @@ public class Game {
             lastRaiser = p;
         }
         if (noMoreBetting()){
-            return finishAllInHand();
+            //return finishAllInHand();
         }
         return nextPlayer();
     }
@@ -209,19 +207,19 @@ public class Game {
     public MoveResult call(){
         Player p = players.get(currentPlayer);
         if (!canCall()){
-            return MoveResult.INVALID_CALL;
+            //return MoveResult.INVALID_CALL;
         }
-        int[] updateTo = p.bet(current);
+        int[] updateTo = p.bet(getAmountToCall());
         addToPot(updateTo[1]);
         if (noMoreBetting()){
-            return finishAllInHand();
+            //return finishAllInHand();
         }
         return nextPlayer();
     }
-    
+
     private MoveResult nextPlayer(){
         if (noMoreBetting()){
-            return finishAllInHand();
+            //return finishAllInHand();
         }
         do {
             currentPlayer++;
@@ -241,6 +239,9 @@ public class Game {
         current = 0;
         for (Player p: players){
             p.setBet(0);
+        }
+        if (noMoreBetting()){
+            return finishAllInHand();
         }
         if (roundCount >= 1 && roundCount <= 3){
             firstPlayer = 0;
@@ -263,6 +264,7 @@ public class Game {
         } else if (roundCount == 3) {
             cards.add(deck.chooseCard());
         } else if (roundCount == 4){
+            /*
             ArrayList<Player> winners = findWinner();
             if (winners.size() > 0){
                 int winnings = pot / winners.size();
@@ -273,12 +275,37 @@ public class Game {
                 }
             }
             pot = 0;
+            */
             return MoveResult.HAND_ENDED;
         } 
         lastRaiser = players.get(firstPlayer);
         return MoveResult.ROUND_ADVANCED;
     }
 
+    public int[] splitWinnings(){
+        ArrayList<Player> winners = findWinner();
+        int[] added = new int[winners.size()];
+        if (winners.size() > 0) {
+            int winnings = pot / winners.size();
+            int leftover = pot % winners.size();
+            int index = (dealer + 1) % playersReference.size();
+            while (leftover > 0){
+                int temp = players.indexOf(playersReference.get(index));
+                if (temp != -1){
+                    added[temp] ++;
+                    leftover--;
+                    index = (index + 1) % playersReference.size();
+                }
+            }
+            for (int i = 0; i < winners.size(); i++){
+                added[i] += winnings;
+            }
+            for (int i = 0; i < winners.size(); i++){
+                winners.get(0).addChips(added[i]);
+            }
+        }
+        return added;
+    }
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
         int maxPoints = -1;
@@ -344,5 +371,8 @@ public class Game {
     }
     public int getRoundCount(){
         return roundCount;
+    }
+    public ArrayList<Player> getPlayersReference(){
+        return playersReference;
     }
 }
