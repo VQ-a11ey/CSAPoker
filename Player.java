@@ -5,6 +5,7 @@ public class Player {
     Card cardOne;
     Card cardTwo;
     int bet;
+    int loans;
 
     public Player() {
         name = "";
@@ -12,6 +13,7 @@ public class Player {
         cardOne = null;
         cardTwo = null;
         bet = 0;
+        loans = 0;
     }
 
     public Card getCardOne() {
@@ -34,6 +36,9 @@ public class Player {
         return bet;
     }
 
+    public int getLoans(){
+        return loans;
+    }
     public boolean isAllIn() {
         return chips == 0;
     }
@@ -57,6 +62,9 @@ public class Player {
         this.bet = bet;
     }
     
+    public void addLoan(){
+        loans++;
+    }
     public int[] bet(int toBet) { //will return [current, addToPot] values
         if (toBet <= chips) {
             bet += toBet;
