@@ -15,6 +15,7 @@ public class Game {
     private int currentPlayer = 0; // for each round
     private Player lastRaiser;
     private int dealer;
+    private boolean[] inactive;
 
     public Game(ArrayList<String> playerNames) {
         if (playerNames.size() < 2){
@@ -22,6 +23,7 @@ public class Game {
         }
         deck = new Deck();
         players = new ArrayList<Player>();
+        inactive = new boolean[playerNames.size()];
         // initialize player stuff
         for (int i = 0; i < playerNames.size(); i++) {
             Player p = new Player();
@@ -41,7 +43,12 @@ public class Game {
     }
 
     public void resetRound(){
-        players = new ArrayList<Player>(playersReference);
+        players.clear();
+        for (int i = 0; i < playersReference.size(); i++){
+            if (!inactive[i]) {
+                players.add(playersReference.get(i));
+            }
+        }
         dealer++;
         if (dealer >= players.size()){
             dealer = 0;
@@ -182,10 +189,11 @@ public class Game {
     }
 
     public MoveResult raise(int amount){
+        amount += getAmountToCall();
         if (!canRaiseBy(amount)) return MoveResult.INVALID_RAISE;
         Player p = players.get(currentPlayer);
         int oldCurrent = current;
-        int[] toUpdate = p.bet(amount);
+        int[] toUpdate = p.bet(amount );
         current = Math.max(toUpdate[0], current);
         addToPot(toUpdate[1]);
         if (toUpdate[0] > oldCurrent){
@@ -374,5 +382,9 @@ public class Game {
     }
     public ArrayList<Player> getPlayersReference(){
         return playersReference;
+    }
+    public void setInactive(Player p){
+        inactive[playersReference.indexOf(p)] = true;
+        players.remove(p);
     }
 }
