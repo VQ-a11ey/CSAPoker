@@ -1,3 +1,4 @@
+package com.example;
 public class Card implements Comparable<Object> {
     private int rank;
     private String suit;
