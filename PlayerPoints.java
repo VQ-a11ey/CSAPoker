@@ -1,12 +1,14 @@
+package com.example;
 import java.util.ArrayList;
 
 public class PlayerPoints extends Player{
+    //should we do this??? idk
     private int points;
     private ArrayList<Card> hand;
 
     public PlayerPoints(Card one, Card two , ArrayList<Card> cards){
         points = 0;
-        this.hand = new ArrayList<Card>();
+        hand = new ArrayList<Card>();
         hand.add(one);
         hand.add(two);
         for (Card c: cards){
@@ -93,11 +95,11 @@ public class PlayerPoints extends Player{
     public boolean hasFlush(){
         int[] ar = new int[4];
         for (Card c: hand){
-            if (c.getSuit() == "Hearts"){
+            if (c.getSuit().equals("Hearts")){
                 ar[0]++;
-            }else if (c.getSuit() == "Spades"){
+            }else if (c.getSuit().equals("Spades")){
                 ar[1]++;
-            }else if (c.getSuit() == "Diamonds"){
+            }else if (c.getSuit().equals("Diamonds")){
                 ar[2]++;
             }else{
                 ar[3]++;
@@ -187,7 +189,8 @@ public class PlayerPoints extends Player{
         return 0;
     }
     //public int highestCardOfFlush(){ do we need this? also one for straightflush
-    public int highestCardRank(){
+    // btw im multiplying by 15 because the cards are ranked from 2 to 14 , 14 being ace. 14 * 15 = 210 + highest card of 14 = 224, intervals have to be at least 224
+    public int highestCardRank(){ // not sure if we need a highest card of straight?
         int max = hand.get(0).getRank();
         for (Card c: hand){
             if (c.getRank() > max){
@@ -237,37 +240,38 @@ public class PlayerPoints extends Player{
                     count++;
                 }
             }
-            if (count == 4) return rank * 15 + highestCardRank()/15
+            if (count == 4) return rank * 15 + highestCardRank()/15;
         }
         return 0;
     }
+
     public int calculatePoints(){
         if (hasRoyalFlush()){
-            return 2250;
+            return 2025;
         }
         if (hasStraightFlush()){
-            return 2000 + highestCardRank();
+            return 1800 + highestCardRank();
         }
         if (hasFourOfAKind()){
-            return 1750 + getFourRank();
+            return 1575 + getFourRank();
         }
         if (hasFullHouse()){
-            return 1500 + getThreeRank();
+            return 1350 + getThreeRank();
         }
         if (hasFlush()){
-            return 1250 + highestCardRank();
+            return 1125 + highestCardRank();
         }
         if (hasStraight()){
-            return 1000 + highestCardOfStraight();
+            return 900 + highestCardOfStraight();
         }
         if (hasThreeOfAKind()){
-            return 750 + getThreeRank();
+            return 675 + getThreeRank();
         }
         if (hasTwoPair()){
-            return 500 + getPairRank();
+            return 450 + getPairRank();
         }
         if (hasPair()){
-            return 250 + getPairRank();
+            return 225 + getPairRank();
         }
         return highestCardRank();
     }
