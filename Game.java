@@ -4,16 +4,23 @@ import java.util.*;
 public class Game {
     private Deck deck;
     private ArrayList<Player> players;
+    private ArrayList<Player> playersReference;
+    private ArrayList<Player> overallPlayers;
     private int pot;
-    private int smallBlind;
-    private int bigBlind;
+    private int smallBlind = 1;
+    private int bigBlind = 2;
     private ArrayList<Card> cards;
-    private int startingPlayer = 0; // for entire game
+    private int firstPlayer = 0; // first player to act in the current betting round
     private int roundCount;
     private int current;
     private int currentPlayer = 0; // for each round
+    private Player lastRaiser;
+    private int dealer;
 
     public Game(ArrayList<String> playerNames) {
+        if (playerNames.size() < 2){
+            throw new IllegalArgumentException("Poker needs at least 2 players.");
+        }
         deck = new Deck();
         players = new ArrayList<Player>();
         // initialize player stuff
@@ -23,26 +30,51 @@ public class Game {
             p.addChips(1000);
             players.add(p);
         }
-        
+        playersReference = new ArrayList<>();
+        overallPlayers = new ArrayList<Player>();
+        for (Player p: players){
+            playersReference.add(p);
+            overallPlayers.add(p);
+        }
         pot = 0;
         cards = new ArrayList<Card>();
-        current = 0;
-        smallBlind = 1;
-        bigBlind = 2;
         roundCount = 0;
-    }
-
-    public void resetRound(){
-        deck = new Deck();
-        cards.clear();
-        pot = 0;
-        smallBlind = 1;
-        bigBlind = 2;
-        roundCount = 0;
-
         dealCards();
     }
 
+    public void resetRound(){
+        players = new ArrayList<>(playersReference);
+        dealer++;
+        if (dealer >= players.size()){
+            dealer = 0;
+        }
+        deck = new Deck();
+        cards.clear();
+        pot = 0;
+        roundCount = 0;
+        for (Player p: players){
+            p.setBet(0);
+        }
+        dealCards();
+    }
+    public int[] getBlindIndices(){
+        int small = (dealer + 1) % players.size();
+        int big = (dealer + 2) % players.size();
+        if (players.size() == 2){ // different with two players (heads up)
+            small = dealer;
+            big = (dealer + 1) % players.size();
+        }
+        return new int[]{small, big};
+    }
+    public void setFirstPlayer(){
+        current = bigBlind;
+        firstPlayer = (dealer + 3) % players.size();
+        if (players.size() == 2){
+            firstPlayer = dealer;
+        }
+        currentPlayer = firstPlayer;
+        lastRaiser = players.get(firstPlayer);
+    }
     public void dealCards() {
         for (Player p : players) {
             p.setCardOne(deck.chooseCard());
@@ -50,6 +82,12 @@ public class Game {
         }
     }
 
+    public int getSmallBlind(){
+        return smallBlind;
+    }
+    public int getBigBlind(){
+        return bigBlind;   
+    }
     public void addToPot(int i) {
         pot += i;
     }
@@ -58,401 +96,181 @@ public class Game {
         return pot;
     }
 
-/* 
-    public void printChipsInfo(int current) {
-        System.out.println("There are " + pot + " chips in the pot.");
-        for (Player p : players) {
-            System.out.println(p.getName() + " has " + p.getChips() + " chips");
-        }
-        System.out.println("The current bet is " + current);
-        System.out.println();
-
+    public int getAmountToCall(){
+        Player p = players.get(currentPlayer);
+        return Math.max(0, current - p.getBet());
     }
 
-    public void printMiddleCards() {
-        if (cards.size() == 0) {
-            System.out.println("No cards have been revealed yet.");
-            return;
-        }
-        for (Card card : cards) {
-            System.out.print(card.getName() + "   ");
-        }
-        System.out.println();
-        System.out.println();
+    public boolean canCheck(){
+        return !players.get(currentPlayer).isAllIn() && getAmountToCall() == 0;
     }
 
-    public void checkHand(Player p) {
-        System.out.println(
-                p.getName() + ", type anything when you are ready to see your cards (other players please look away).");
-        sc.next();
-        p.printPlayerCards();
-        System.out.println("Are you done looking at your cards? type anything to move on: ");
-        sc.next();
-        for (int j = 0; j < 20; j++) {
-            System.out.println();
-        }
+    public boolean canCall(){
+        return !players.get(currentPlayer).isAllIn() && getAmountToCall() > 0;
     }
-*/
-    public void foldButton(){
+
+    public boolean canRaiseBy(int amount){
+        Player p = players.get(currentPlayer);
+        return !p.isAllIn() && amount <= p.getChips();
+    }
+
+    public void fold(){
+        Player p = players.get(currentPlayer);
+        boolean end = (p == lastRaiser);
         players.remove(currentPlayer);
-        if (currentPlayer < startingPlayer) {
-            startingPlayer--;
-            if (startingPlayer < 0) {
-                startingPlayer += players.size();
+        
+        if (currentPlayer < firstPlayer) {
+            firstPlayer--;
+            if (firstPlayer < 0) {
+                firstPlayer += players.size();
             }
         }
         if (currentPlayer >= players.size()) {
             currentPlayer = 0;
         }
         if (players.size() == 1){
-            roundCount = 4;
-            players.get(0).addChips(pot);
+            roundCount = 3;
+            //players.get(0).addChips(pot);
+            //pot = 0;
+            return;
+        }
+        else if (end){
+            nextRound();
+        }
+        else{
+            currentPlayer--;
+            nextPlayer();
+        }
+    }
+
+    public void raise(int amount){
+        amount += getAmountToCall();
+        if (!canRaiseBy(amount)) return;
+        Player p = players.get(currentPlayer);
+        int oldCurrent = current;
+        int[] toUpdate = p.bet(amount );
+        current = Math.max(toUpdate[0], current);
+        addToPot(toUpdate[1]);
+        if (toUpdate[0] > oldCurrent){
+            lastRaiser = p;
+        }
+        nextPlayer();
+    }
+
+    public void check(){
+        if (!canCheck()){
             return;
         }
         nextPlayer();
     }
-/*
-public int fold(int index) {
-        players.remove(index);
-        if (index < startingPlayer) {
-            startingPlayer--;
-            if (startingPlayer < 0) {
-                startingPlayer += players.size();
-            }
-        }
-        if (startingPlayer >= players.size()) {
-            //startingPlayer -= players.size();
-        }
-        index--;
-        if (index < 0) {
-            index += players.size();
-        }
-        return index;
-    }
-*/
-    public void raiseButton(int amount){
+
+    public void call(){
         Player p = players.get(currentPlayer);
-        int[] toUpdate = p.bet(amount);
-        current = toUpdate[0];
-        addToPot(toUpdate[1]);
-        nextPlayer();
-    }
-/*
- public int raise(Player p, int current) { // returns what current will be set to
-        int input = -1;
-        while (input <= current) { // nextline?????
-            System.out.print("input raise amount (integer): ");
-            if (sc.hasNextInt()) {
-                input = sc.nextInt();
-            } else {
-                sc.next();
-            }
+        if (!canCall()){
+            //return MoveResult.INVALID_CALL;
         }
-        int[] toUpdate = p.bet(input);
-        current = toUpdate[0];
-        addToPot(toUpdate[1]);
-        return current;
-    }
-
-    public String makeDecision(Player p, ArrayList<String> options) {
-        String decision = "";
-        while (!options.contains(decision)) {
-            System.out.print(p.getName()
-                    + ", enter your move ("
-                    + options.get(0) + ", " + options.get(1) + ", " + options.get(2) + ", middle, or hand): ");
-            decision = sc.next().toLowerCase();
-            if (decision.equals("middle")) {
-                printMiddleCards();
-                decision = "reenter decision";
-                System.out.print("Re-enter decision. ");
-            } else if (decision.equals("hand")) {
-                checkHand(p);
-                decision = "reenter decision";
-                System.out.print("Re-enter decision. ");
-            }
-        }
-        return decision;
-    }
-*/
-
-    public void checkButton(){
-        nextPlayer();
-    }
-
-    public void callButton(){
-        Player p = players.get(currentPlayer);
-        int[] updateTo = p.bet(current);
+        int[] updateTo = p.bet(getAmountToCall());
         addToPot(updateTo[1]);
         nextPlayer();
     }
-    
-    public void nextPlayer(){
-        currentPlayer++;
-        if (currentPlayer > players.size()){
-            currentPlayer = 0;
-            nextRound();
-        }
+
+    private void nextPlayer(){
+        do {
+            currentPlayer++;
+            if (currentPlayer >= players.size()){
+                currentPlayer = 0;
+            }
+            if (players.get(currentPlayer) == lastRaiser){
+                nextRound();
+                return;
+            }
+        } while (players.get(currentPlayer).isAllIn());
     }
 
-    public void nextRound(){
-        //bigblind and small blind
+    private void nextRound(){
+        currentPlayer = firstPlayer;
         roundCount++;
         current = 0;
         for (Player p: players){
             p.setBet(0);
         }
+        // check if hand is finished
+        int playersWhoCanAct = 0;
+        for (Player p : players){
+            if (!p.isAllIn()){
+                playersWhoCanAct++;
+            }
+        }
+        if (playersWhoCanAct <= 1){
+            while (cards.size() < 5){
+                cards.add(deck.chooseCard());
+            }
+            roundCount = 4;
+            return;
+        }
+        if (roundCount >= 1 && roundCount <= 3){
+            firstPlayer = 0;
+            for (int i = 1; i <= playersReference.size(); i++){
+                Player p = playersReference.get((dealer + i) % playersReference.size());
+                int activeIndex = players.indexOf(p);
+                if (activeIndex != -1 && !p.isAllIn()){
+                    firstPlayer = activeIndex;
+                    break;
+                }
+            }
+            currentPlayer = firstPlayer;
+        }
         if (roundCount == 1){
             for (int i = 0; i < 3; i++) {
-                    cards.add(deck.chooseCard());
-                }
+                cards.add(deck.chooseCard());
+            }
         } else if (roundCount == 2) {
                 cards.add(deck.chooseCard());
         } else if (roundCount == 3) {
             cards.add(deck.chooseCard());
         } else if (roundCount == 4){
+            /*
             ArrayList<Player> winners = findWinner();
             if (winners.size() > 0){
                 int winnings = pot / winners.size();
+                int leftover = pot % winners.size();
+                winners.get(0).addChips(leftover);
                 for (Player p : winners){
                     p.addChips(winnings);
                 }
             }
-        } 
-    }
-
-/* public void runRound(int bet) {
-        int current = bet;
-        boolean didIt = false; // variable saying if in first betting round if bigblind already went
-        if (bet != 0) {
-            players.get(startingPlayer).bet(smallBlind);
-            addToPot(smallBlind);
-            System.out.println(players.get(startingPlayer).getName() + " has just paid the small blind of " + smallBlind);
-            int next = startingPlayer + 1;
-            if (next >= players.size()){
-                next -= players.size();
-            }
-            players.get(next).bet(bigBlind);
-            addToPot(bigBlind);
-            System.out.println(players.get(next).getName() + " has just paid the big blind of " + bigBlind + "\n");
-
-            for (Player p : players) {
-                checkHand(p);
-            }
-        }
-        if (bet != 0) {
-            startingPlayer += 2; // first betting round starts with person after big blind
-        }
-        for (int i = 0; i < players.size(); i++) {
-            int index = startingPlayer + i;
-            if (index >= players.size()) {
-                index -= players.size();
-            }
-            Player p = players.get(index);
-            printChipsInfo(current);
-            if (current == 0) {
-                String decision = makeDecision(p, new ArrayList<>(List.of("raise", "fold", "check")));
-                System.out.println();
-                if (decision.equals("check")) {
-                    continue;
-                } else if (decision.equals("fold")) {
-                    i--;
-                    index = fold(index);
-                    if (players.size() == 1) {
-                        break;
-                    }
-                    if (i == players.size() - 1 && p.getBet() > players.get(startingPlayer).getBet()) { // go back to
-                                                                                                        // match raise
-                        i = -1;
-                        continue;
-                    }
-                    continue;
-                } else if (decision.equals("raise")) {
-                    current = raise(p, current);
-                }
-            } else {
-                // System.out.println(p.getName() + ", enter your
-                // move(Raise,Fold,Call,Middle,Hand): ");
-                // String decision = sc.next().toLowerCase();
-                String decision = "";
-                if (current == p.getBet()) {
-                    decision = makeDecision(p, new ArrayList<>(List.of("raise", "fold", "check")));
-
-                } else {
-                    decision = makeDecision(p, new ArrayList<>(List.of("raise", "fold", "call")));
-                }
-                System.out.println();
-                if (decision.equals("fold")) {
-                    i--;
-                    index = fold(index);
-                    if (players.size() == 1) {
-                        break;
-                    }
-                    if (i == players.size() - 1 && p.getBet() > players.get(startingPlayer).getBet()) { // go back to
-                                                                                                        // match raise
-                        i = -1;
-                        continue;
-                    }
-                    continue;
-                } else if (decision.equals("raise")) {
-                    current = raise(p, current);
-                } else if (decision.equals("call")) {
-                    int[] toUpdate = p.bet(current);
-                    addToPot(toUpdate[1]);
-                } else if (decision.equals("check")) {
-                    continue;
-                }
-            }
-            if (players.size() == 1) {
-                break;
-            }
-            int toCheck = startingPlayer;
-            if (toCheck >= players.size()){
-                toCheck -= players.size();
-            }
-            if (i == players.size() - 1 && p.getBet() > players.get(toCheck).getBet()) { // go back to match
-                                                                                                // raise
-                i = -1;
-                continue;
-            }
-            if (i == players.size() - 2 && bet != 0 && !didIt) {
-                didIt = true;
-                continue;
-            }
-            int check = index + 1;
-            if (check == players.size()) {
-                check = 0;
-            }
-            if (current != 0 && p.getBet() == players.get(check).getBet()) {
-                break;
-            }
-        }
-        if (bet != 0) {
-            startingPlayer -= 2;
-        }
-        if (players.size() == 1) {
+            pot = 0;
+            */
             return;
-        }
+        } 
+        lastRaiser = players.get(firstPlayer);
+        return;
     }
 
-    public void runEntireGame() {
-        int roundCount = 0;
-        System.out.println("A few notes before the round starts!");
-        System.out.println("The following are each player's chip amounts as of the start of this round: ");
-        for (Player p: players){
-            System.out.println(p.getName() + " has " + p.getChips() + " chips");
-        }
-        System.out.println();
-        System.out.println(
-                "At any point in the game, you can enter 'hand' to check your hand and 'middle' to check the cards in the middle.");
-        System.out.println("Note that in this game, inputting the raise amount as X means 'raise to X' rather than 'raise by X'.");
-        System.out.println("\nType anything to acknowledge these notes and get the round started.");
-        sc.next();
-        System.out.println();
-        while (roundCount <= 4 && players.size() >= 2) {
-            if (roundCount == 0) {
-                dealCards();
-                runRound(bigBlind);
-            } else if (roundCount == 1) {
-                // reveal first 3 cards
-                System.out.println("Here's the flop!");
-                for (int i = 0; i < 3; i++) {
-                    cards.add(deck.chooseCard());
-                }
-                printMiddleCards();
-                runRound(0);
-            } else if (roundCount == 2) {
-                cards.add(deck.chooseCard());
-                System.out.println("Here's the river!");
-                printMiddleCards();
-                runRound(0);
-            } else if (roundCount == 3) {
-                System.out.println("Here's the turn!");
-                cards.add(deck.chooseCard());
-                printMiddleCards();
-                runRound(0);
-            }
-
-            // First is after dealing cards to each player
-            // Second is after the flop is revealed
-            // Third is after the river
-            // Fourth after the turn
-            else if (roundCount == 4) {
-                // Show remaining players’ cards
-                System.out.println("The round is over!\nType anything when you are ready to reveal everyone's cards.");
-                sc.next();
-                System.out.println("\nHere are everyone's cards!");
-                for (Player p : players) {
-                    System.out.print(p.getName() + ": ");
-                    p.printPlayerCards();
-                }
-                System.out.println("\nThe cards in the middle were: ");
-                printMiddleCards();
-                ArrayList<Player> winners = findWinner();
-                if (winners.size() > 1) {
-                    int winnings = getPot() / (winners.size());
-                    for (Player p : winners) {
-                        p.addChips(winnings);
-                        System.out.print(p.getName() + " ");
-                    }
-                    System.out.println("are the winners!");
-                    System.out.println(
-                            "They each had a " + handType(winners.get(0)) + " and each won " + winnings + " chips.");
-                    resetPot();
-                } else {
-                    if (winners.size() == 0) {
-                        System.out.println("findWinner is still under development.");
-                        break;
-                    }
-                    Player winner = winners.get(0);
-                    winner.addChips(getPot());
-                    System.out.println(winner.getName() + " won the game with a " + handType(winner) + " and won "
-                            + getPot() + " chips!");
-                    resetPot();
-                }
-            } else {
-                System.out.println(players.get(0).getName() + " wins!");
-                resetPot();
-            }
-            roundCount++;
-            if (players.size() == 1) {
-                System.out.println("The winner is " + players.get(0).getName() + "!");
-                System.out.println(players.get(0).getName() + " won " + getPot() + " chips.");
-                players.get(0).addChips(getPot());
-                resetPot();
-                break;
-            }
-        }
-
-        System.out.println("Do you want to play another round? Enter yes to continue playing. ");
-        String decision = sc.next().toLowerCase();
-        players = new ArrayList<Player>();
-        for (Player p: playersReference){
-            p.setBet(0);
-            players.add(p);
-        }
-        if (decision.equals("yes")) {
-            for (Player p : players) {
-                if (p.getChips() == 0) {
-                    System.out.println(p.getName() + ", do you want to get a loan of 1000 chips cuz ur broke? ");
-                    String answer = sc.next().toLowerCase();
-                    if (answer.equals("yes")) {
-                        p.addChips(1000);
-                    }
+    public int[] splitWinnings(){
+        ArrayList<Player> winners = findWinner();
+        int[] added = new int[winners.size()];
+        if (winners.size() > 0) {
+            int winnings = pot / winners.size();
+            int leftover = pot % winners.size();
+            int index = (dealer + 1) % playersReference.size();
+            while (leftover > 0){
+                int temp = players.indexOf(playersReference.get(index));
+                if (temp != -1){
+                    added[temp] ++;
+                    leftover--;
+                    index = (index + 1) % playersReference.size();
                 }
             }
-            overallStartingPlayer++;
-            if (overallStartingPlayer >= players.size()) {
-                overallStartingPlayer = 0;
+            for (int i = 0; i < winners.size(); i++){
+                added[i] += winnings;
             }
-            startingPlayer = overallStartingPlayer;
-            deck = new Deck();
-            cards = new ArrayList<Card>();
-            runEntireGame();
+            for (int i = 0; i < winners.size(); i++){
+                winners.get(i).addChips(added[i]);
+            }
         }
+        return added;
     }
-*/
-    
-
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
         int maxPoints = -1;
@@ -474,31 +292,31 @@ public int fold(int index) {
     public String handType(Player winner) {
         PlayerPoints pointSystem = new PlayerPoints(winner.getCardOne(), winner.getCardTwo(), cards);
         int points = pointSystem.calculatePoints();
-        if (points == 2250) {
+        if (points == 2025) {
             return "Royal Flush";
         }
-        if (points >= 2000) {
+        if (points >= 1800) {
             return "Straight Flush";
         }
-        if (points >= 1750) {
+        if (points >= 1575) {
             return "Four of a Kind";
         }
-        if (points >= 1500) {
+        if (points >= 1350) {
             return "Full House";
         }
-        if (points >= 1250) {
+        if (points >= 1125) {
             return "Flush";
         }
-        if (points >= 1000) {
+        if (points >= 900) {
             return "Straight";
         }
-        if (points >= 750) {
+        if (points >= 675) {
             return "Three of a Kind";
         }
-        if (points >= 500) {
+        if (points >= 450) {
             return "Two Pair";
         }
-        if (points >= 250) {
+        if (points >= 225) {
             return "Pair";
         } else {
             return "High Card";
@@ -518,5 +336,25 @@ public int fold(int index) {
     }
     public int getRoundCount(){
         return roundCount;
+    }
+    public ArrayList<Player> getOverallPlayers(){
+        return overallPlayers;
+    }
+    public ArrayList<Player> getPlayersReference(){
+        return playersReference;
+    }
+    public void setCurrentPlayer(int c){
+        currentPlayer = c;
+    }
+    public void setInactive(Player p){
+        int index = playersReference.indexOf(p);
+        playersReference.remove(p);
+        if (index < dealer){
+            dealer--;
+            if (dealer < 0){
+                dealer += playersReference.size();
+            }
+        }
+        players.remove(p);
     }
 }
