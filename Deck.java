@@ -1,3 +1,4 @@
+package com.example;
 import java.util.ArrayList;
 
 public class Deck {
@@ -5,16 +6,16 @@ public class Deck {
 
     public Deck() {
         cards = new ArrayList<Card>(52);
-        for (int i = 1; i < 14; i++) {
+        for (int i = 2; i < 15; i++) {
             cards.add(new Card(i, "Hearts"));
         }
-        for (int i = 1; i < 14; i++) {
+        for (int i = 2; i < 15; i++) {
             cards.add(new Card(i, "Spades"));
         }
-        for (int i = 1; i < 14; i++) {
+        for (int i = 2; i < 15; i++) {
             cards.add(new Card(i, "Diamonds"));
         }
-        for (int i = 1; i < 14; i++) {
+        for (int i = 2; i < 15; i++) {
             cards.add(new Card(i, "Clubs"));
         }
     }
