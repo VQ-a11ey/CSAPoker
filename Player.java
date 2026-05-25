@@ -1,9 +1,11 @@
+package com.example;
 public class Player {
     String name;
     int chips;
     Card cardOne;
     Card cardTwo;
     int bet;
+    int loans;
 
     public Player() {
         name = "";
@@ -11,6 +13,7 @@ public class Player {
         cardOne = null;
         cardTwo = null;
         bet = 0;
+        loans = 0;
     }
 
     public Card getCardOne() {
@@ -33,6 +36,13 @@ public class Player {
         return bet;
     }
 
+    public int getLoans(){
+        return loans;
+    }
+    public boolean isAllIn() {
+        return chips == 0;
+    }
+
     public void setCardOne(Card one) {
         cardOne = one;
     }
@@ -52,17 +62,19 @@ public class Player {
         this.bet = bet;
     }
     
+    public void addLoan(){
+        loans++;
+    }
     public int[] bet(int toBet) { //will return [current, addToPot] values
-        int moreChips = toBet - bet;
-        if (moreChips <= chips) {
-            bet = toBet;
-            int[] result = {toBet, moreChips};
-            chips -= moreChips;
+        if (toBet <= chips) {
+            bet += toBet;
+            int[] result = {bet, toBet};
+            chips -= toBet;
             return result;
         } else { // all in
-            System.out.println(name + " is going all in!");
+            //System.out.println(name + " is going all in!");
             bet += chips;
-            int[] result = {chips + bet, chips};
+            int[] result = {bet, chips};
             chips = 0;
             return result;
         }
