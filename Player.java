@@ -72,7 +72,7 @@ public class Player {
             chips -= toBet;
             return result;
         } else { // all in
-            System.out.println(name + " is going all in!");
+            //System.out.println(name + " is going all in!");
             bet += chips;
             int[] result = {bet, chips};
             chips = 0;
