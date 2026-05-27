@@ -70,6 +70,7 @@ public class Game {
         }
         dealCards();
     }
+
     public int[] getBlindIndices(){
         int small = (dealer + 1) % players.size();
         int big = (dealer + 2) % players.size();
@@ -88,23 +89,37 @@ public class Game {
         currentPlayer = firstPlayer;
         lastRaiser = players.get(firstPlayer);
     }
+/**
+ * Deals two cards to each player in p
+ */
     private void dealCards() {
         for (Player p : players) {
             p.setCardOne(deck.chooseCard());
             p.setCardTwo(deck.chooseCard());
         }
     }
-
+/**
+ * @return integer small Blind
+ */
     public int getSmallBlind(){
         return smallBlind;
     }
+/**
+ * @return integer big Blind
+ */
     public int getBigBlind(){
         return bigBlind;   
     }
+/**
+ * @param i
+ * adds i to the pot
+ */
     public void addToPot(int i) {
         pot += i;
     }
-
+/**
+ * @return pot
+ */
     public int getPot() {
         return pot;
     }
@@ -113,7 +128,10 @@ public class Game {
         Player p = players.get(currentPlayer);
         return Math.max(0, current - p.getBet());
     }
-
+/**
+ * determines if player can check (did not go all in and can pay)
+ * @return
+ */
     public boolean canCheck(){
         return !players.get(currentPlayer).isAllIn() && getAmountToCall() == 0;
     }
