@@ -1,10 +1,34 @@
 package com.example;
 import java.util.ArrayList;
 
+/**
+ * @author Anna Chen 
+ * @date 5/27/2026
+ * PlayerPoints is used to calculate the points in a player's hand and the middle cards 
+ * for determining the winner of the round
+ */
+
 public class PlayerPoints extends Player{
-    //should we do this??? idk
     private int points;
     private ArrayList<Card> hand;
+    private int[] counts; 
+    private boolean hasRoyalFlush;
+    private boolean hasStraightFlush;
+    private boolean hasFourOfAKind;
+    private boolean hasFullHouse;
+    private boolean hasFlush;
+    private boolean hasStraight;
+    private boolean hasThreeOfAKind;
+    private boolean hasTwoPair;
+    private boolean hasPair;
+
+    /**
+     * constructor for player points, takes in the two cards from the players and the 
+     * cards in the middle and puts it in an arrayList of cards used to calculate player points
+     * @param one
+     * @param two
+     * @param cards
+     */
 
     public PlayerPoints(Card one, Card two , ArrayList<Card> cards){
         points = 0;
@@ -14,87 +38,160 @@ public class PlayerPoints extends Player{
         for (Card c: cards){
             hand.add(c);
         }
+        counts = new int[15];
+        for (Card c : hand){
+            counts[c.getRank()]++;
+        }
+        hasRoyalFlush = false;
+        hasStraightFlush = false;
+        hasFourOfAKind = false;
+        hasFullHouse = false;
+        hasFlush = false;
+        hasStraight = false;
+        hasThreeOfAKind = false;
+        hasTwoPair = false;
+        hasPair = false;
     }
+/**
+ * @return hand of cards with player's two cards and middle cards
+ */
+
     public ArrayList<Card> getHand(){
         return hand;
     }
+/**
+ * @param points sets the points of player to the parameter points
+ * sets point of player to parameter points
+ */
     public void setPoints(int points){
         this.points = points;
     }
+/**
+ * get points of player
+ * @return ponts of player
+ */
     public int getPoints(){
         return points;
     }
-    public boolean hasPair(){
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0; 
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(i).getRank() == hand.get(j).getRank()){
-                    count++;
+/**
+ * checks if player has a pair and returns the rank of pair, -1 if no pair 
+ * sets hasPair to true for later methods to use for calculating points
+ * @return rank of pair if there is a pair, -1 if there is no pair
+ */
+    public int hasPair(){
+        int highestPair = -1;
+        for (int i = 2; i <= 14; i++){
+            if (counts[i] >= 2){
+                if (i > highestPair){
+                    highestPair = i;
                 }
             }
-            if (count == 2){
-                return true;
-            }
         }
-        return false;
+        hasPair = (highestPair != -1);
+        return highestPair;
     }
-    public boolean  hasTwoPair(){
-        int pairs = 0;
-         for (int i = 0; i < hand.size(); i++){
-            int count = 0; 
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(i).getRank() == hand.get(j).getRank()){
-                    count++;
+/**
+ * checks if player has a twoPair pattern
+ * sets hasTwoPair to true for calculating points later
+ * @return an array of the ranks of the two pairs, with the first element
+ * being the higher pair, and the second element being the lower pair, if there is no pair, it returns an array of -1, -1
+ */
+    public int[] hasTwoPair(){
+        int[] twoPair = {-1, -1}; // 1 is highest pair, 2 is second highest pair
+        for (int i = 2; i <= 14; i++){
+            if (counts[i] >= 2){
+                if (i > twoPair[0]){
+                    twoPair[1] = twoPair[0];
+                    twoPair[0] = i;
+                } else if (i > twoPair[1]){
+                    twoPair[1] = i;
                 }
             }
-            if (count == 2){
-                pairs++;
-            }
         }
-        return pairs/2 == 2;
+        hasTwoPair = (twoPair[1] != -1);
+        return twoPair;
     }
-    public boolean hasThreeOfAKind(){
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0; 
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(i).getRank() == hand.get(j).getRank()){
-                    count++;
+/**
+ * checks if player has three of a kind pattern
+ * sets hasThreeOfAKind to true for calculating points later
+ * @return rank of three of a kind if there is one, -1 if there is no three of a kind
+ */
+    public int threeOfAKind(){
+        int three = -1;
+        for (int i = 2; i <= 14; i++){
+            if (counts[i] >= 3){
+                if (i > three){
+                    three = i;
                 }
             }
-            if (count == 3) {
-                return true;
+        }
+        hasThreeOfAKind = (three != -1);
+        return three;
+    }
+/**
+ * checks if player has four of a kind pattern
+ * sets hasFourOfAKind to true for calculating points later
+ * @return rank of four of a kind if there is one, -1 if there is no four of a kind
+ */
+    public int hasFourOfAKind(){
+        int four = -1;
+        for (int i = 2; i <= 14; i++){
+            if (counts[i] >= 4){
+                four = i;
             }
         }
-        return false;
+        hasFourOfAKind = (four != -1);
+        return four;
     }
-    public boolean hasStraight(){
-        int[] ranks = new int[hand.size()];
-        for (int i = 0; i < hand.size(); i++){
-            ranks[i] = hand.get(i).getRank();
-        }
-        for (int i = 0; i < ranks.length - 1; i++){
-            for (int j = i + 1; j < ranks.length; j++){
-                if (ranks[i] > ranks[j]){
+/**
+ * checks if player has straight pattern 
+ * sets hasStraight to true for calculating points later
+ * @return an arrayList of the ranks of the straights in the player's hand, if there are no straights, it returns an empty arrayList
+ * the returned arrayList is used to calculate points since the last element is the highest straight
+ * and it is also used in hasStraightFlush to check if any of the straights is a flush 
+ */
+    public ArrayList<Integer> hasStraight(){
+       ArrayList<Integer> straights = new ArrayList<Integer>();
+       int[] ranks = new int[hand.size()];
+       for (int i = 0; i < hand.size(); i++){
+           ranks[i] = hand.get(i).getRank();
+       }
+       for (int i = 0; i < ranks.length - 1; i++){
+           for (int j = i + 1; j < ranks.length; j++){
+               if (ranks[i] > ranks[j]){
                     int temp = ranks[i];
                     ranks[i] = ranks[j];
                     ranks[j] = temp;
-                }
-            }
-        } // above this line is sorting stuff maybe create a mehtod??? idk
-        int straight = 1;
-        for (int i = 0; i < ranks.length - 1; i++){
-            if (ranks[i] + 1 == ranks[i+1]){
-                straight++;
-                if (straight == 5){
-                    return true;
-                }
-            } else straight = 1;
-        }
-        return false;
+               }
+           }
+       }
+       int straight = 1;
+       for (int i = 0; i < ranks.length - 1; i++){
+           if (ranks[i]== ranks[i+1]){
+               continue;
+           } else if (ranks[i]+1 == ranks[i+ 1]){
+               straight++;
+               if (straight >= 5){
+                   straights.add(ranks[i+1]);
+               }
+           } else {
+               straight = 1;
+           }
+       }
+       if (straights.size() > 0){
+           hasStraight = true;
+       }
+       return straights;
     }
-    public boolean hasFlush(){
+/**
+ * sets hasFlush to true for calculating points later
+ * @param rayy , an array list of cards to check for flush
+ * @return rank of the highest card in the flush, if there is no flush, it returns -1
+ */
+    public int hasFlush(ArrayList<Card> rayy){
         int[] ar = new int[4];
-        for (Card c: hand){
+        int highest = -1;
+        for (Card c: rayy){
             if (c.getSuit().equals("Hearts")){
                 ar[0]++;
             }else if (c.getSuit().equals("Spades")){
@@ -105,175 +202,192 @@ public class PlayerPoints extends Player{
                 ar[3]++;
             }
         }
-        return ar[0] >= 5 || ar[1] >= 5 || ar[2] >= 5 || ar[3] >= 5;
-    }
-    public boolean hasFullHouse(){
-        boolean three = false;
-        int threeNum = 0;
-        boolean pair = false;
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0;
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(i).getRank() == hand .get(j).getRank()){
-                    count++;
-                }
-            }
-            if (count == 3){
-                three = true;
-                threeNum = i;
+        for (Card c: hand){
+            if (ar[0] >= 5 && c.getSuit().equals("Hearts") && c.getRank() > highest){
+                highest = c.getRank();
+            } else if (ar[1] >= 5 && c.getSuit().equals("Spades") && c.getRank() > highest){
+                highest = c.getRank();
+            } else if (ar[2] >= 5 && c.getSuit().equals("Diamonds") && c.getRank() > highest){
+                highest = c.getRank();
+            } else if (ar[3] >= 5 && c.getSuit().equals("Clubs") && c.getRank() > highest){
+                highest = c.getRank();
             }
         }
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0;
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(i).getRank() == hand .get(j).getRank()){
-                    count++;
-                }
-            }
-            if (count == 2 && i != threeNum){
-                pair = true;
+        hasFlush = (ar[0] >= 5 || ar[1] >= 5 || ar[2] >= 5 || ar[3] >= 5);
+        return highest;
+    }
+/**
+ * checks if player has a full house pattern
+ * sets hasFullHouse to true for calculating points later
+ * @return a number that is the rank of the three of a kind times 15 squared plus the rank of the pair times 15, if there is no full house, it returns -1
+ * the returned number is used to calculate points 
+ */
+    public int hasFullHouse(){
+        int three = -1;
+        int pair = -1;
+        for (int i = 2; i <= 14; i++){
+            if (counts[i] == 3 && i > three){
+                three = i;
             }
         }
-        return three && pair;
+        for (int i = 2; i <= 14; i++){
+            if (counts[i] == 2 && i != three && i > pair){
+                pair = i;
+            }
+        }
+        if (three != -1 && pair != -1) {
+            hasFullHouse = true;
+            return three * 15 * 15+ pair * 15;
+        }
+        hasFullHouse = false;
+        return -1;
     }
-    public boolean hasFourOfAKind(){
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0;
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(i).getRank() == hand.get(j).getRank()){
-                    count++;
+/**
+ * checks if player has a straight flush pattern
+ * sets hasStraightFlush to true for calculating points later
+ * @return rank of the highest card in the straight flush, if there is no straight flush, it returns -1
+ */
+    public int hasStraightFlush(){
+        
+      int highestss = -1;
+        int[] ranks = new int[hand.size()];
+       for (int i = 0; i < hand.size(); i++){
+           ranks[i] = hand.get(i).getRank();
+       }
+       for (int i = 0; i < ranks.length - 1; i++){
+           for (int j = i + 1; j < ranks.length; j++){
+               if (ranks[i] > ranks[j]){
+                    int temp = ranks[i];
+                    ranks[i] = ranks[j];
+                    ranks[j] = temp;
+               }
+           }
+       }
+       int straight = 1;
+       for (int i = 0; i < ranks.length - 1; i++){
+           if (ranks[i]== ranks[i+1]){
+               continue;
+           } else if (ranks[i]+1 == ranks[i+ 1]){
+               straight++;
+               if (straight >= 5){
+                    String[] suits = {"Hearts", "Spades", "Diamonds", "Clubs"};
+                    for (String suit:suits){
+                       int count = 0;
+                       for (int rank = ranks[i+1]; rank >= ranks[i-3]; rank--){
+                           for (Card c: hand){
+                               if (c.getRank() == rank && c.getSuit().equals(suit)){
+                                   count++;
+                               }
+                           }
+                       }
+                       if (count == 5){
+                           hasStraightFlush = true;
+                           highestss= ranks[i+1];
+                    }
+                   }
+               }
+           } else {
+               straight = 1;
+           }
+       }
+        return highestss;
+    }
+/**
+ * checks if player has a royal flush pattern
+ * sets hasRoyalFlush to true for calculating points later
+ * @return true if player has a royal flush, false if player does not have a royal flush
+ */
+    public boolean hasRoyalFlush(){
+        String[] suits = {"Hearts", "Spades", "Diamonds", "Clubs"};
+        for (String suit:suits){
+            boolean ten = false;
+            boolean jack = false;
+            boolean queen = false;
+            boolean king = false;
+            boolean ace = false;
+            for (Card c:hand){
+                if (c.getSuit().equals(suit)){
+                    if (c.getRank() == 10) {
+                        ten = true;
+                    }
+                    if (c.getRank() == 11) {
+                        jack = true;
+                    }
+                    if (c.getRank() == 12) {
+                        queen = true;
+                    }
+                    if (c.getRank() == 13) {
+                        king = true;
+                    }
+                    if (c.getRank() == 14) {
+                        ace = true;
+                    }
                 }
             }
-            if (count == 4) {
+            if (ten && jack && queen && king && ace){
+                hasRoyalFlush = true;
                 return true;
             }
-        } 
-        return false;
-    }
-    public boolean hasStraightFlush(){
-        return hasStraight() && hasFlush();
-    }
-    public boolean hasRoyalFlush(){
-        if (hasFlush()){
-            return highestCardOfStraight()/15 == 14;
         }
         return false;
         
     }
-    public void sortingForStraights(int[] rank){
-        for (int i = 0; i < hand.size(); i++){
-            rank[i] = hand.get(i).getRank();
-        }
-        for (int i = 0; i < rank.length - 1; i++){
-            for (int j = i + 1; j < rank.length; j++){
-                if (rank[i] > rank[j]){
-                    int temp = rank[i];
-                    rank[i] = rank[j];
-                    rank[j] = temp;
-                }
-            }
-        } 
-    }
-    public int highestCardOfStraight(){ 
-        int[] ranks = new int[hand.size()];
-        sortingForStraights(ranks);
-        int straight = 1;
-        for (int i = 0; i < ranks.length - 1; i++){
-            if (ranks[i] + 1 == ranks[i+1]){
-                straight++;
-                if (straight == 5){
-                    return i * 15 + highestCardRank()/15;
-                }
-            } else straight = 1;
-        }
-        return 0;
-    }
-    //public int highestCardOfFlush(){ do we need this? also one for straightflush
-    // btw im multiplying by 15 because the cards are ranked from 2 to 14 , 14 being ace. 14 * 15 = 210 + highest card of 14 = 224, intervals have to be at least 224
-    public int highestCardRank(){ // not sure if we need a highest card of straight?
-        int max = hand.get(0).getRank();
+/**
+ * finds the rank of the highest card in the player's hand for calculating points in case of tie breakers
+ * @return rank of the highest card in the player's hand, if there are no cards, it returns 0
+ */
+    public int highestCardRank(){ 
+        int highest = 0;
         for (Card c: hand){
-            if (c.getRank() > max){
-                max = c.getRank();
+            if (c.getRank() > highest){
+                highest = c.getRank();
             }
         }
-        return max * 15;
+        return highest;
     }
-    public int getPairRank(){
-        int pair = 0;
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0;
-            int rank = hand.get(i).getRank();
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(j).getRank()==rank){
-                    count++;
-                }
-            }
-            if (count == 2 && rank > pair){
-                pair = rank;
-            }
-        }
-        return pair * 15 + highestCardRank()/15;
-    }
-    public int getThreeRank(){
-        int three = 0;
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0; 
-            int rank = hand.get(i).getRank();
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(j).getRank() == rank){
-                    count++;
-                }
-            }
-            if (count == 3 && rank > three){
-                three = rank;
-            }
-        }
-        return three * 15 + highestCardRank()/15;
-    }
-    public int getFourRank(){
-        for (int i = 0; i < hand.size(); i++){
-            int count = 0;
-            int rank = hand.get(i).getRank();
-            for (int j = 0; j < hand.size(); j++){
-                if (hand.get(j).getRank() == rank){
-                    count++;
-                }
-            }
-            if (count == 4) return rank * 15 + highestCardRank()/15;
-        }
-        return 0;
-    }
-
+/**
+ * calculates the points of the player's hand based on the patterns in the hand and the ranks of the cards in the hand
+ * @return calculated player point based on the ir hand 
+ */
     public int calculatePoints(){
-        if (hasRoyalFlush()){
-            return 2025;
+        hasRoyalFlush();
+        hasStraightFlush();
+        hasFourOfAKind();
+        hasFullHouse();
+        hasFlush(hand);
+        hasStraight();
+        threeOfAKind();
+        hasTwoPair();
+        hasPair();
+
+        if (hasRoyalFlush){
+            return 8300;
         }
-        if (hasStraightFlush()){
-            return 1800 + highestCardRank();
+        if (hasStraightFlush){
+            return 8050 + hasStraightFlush() * 15 + highestCardRank();
         }
-        if (hasFourOfAKind()){
-            return 1575 + getFourRank();
+        if (hasFourOfAKind){
+            return 7800 + hasFourOfAKind() * 15 + highestCardRank();
         }
-        if (hasFullHouse()){
-            return 1350 + getThreeRank();
+        if (hasFullHouse){
+            return 4400 + hasFullHouse() + highestCardRank();
         }
-        if (hasFlush()){
-            return 1125 + highestCardRank();
+        if (hasFlush){
+            return 4150 + hasFlush(hand) * 15 + highestCardRank();
         }
-        if (hasStraight()){
-            return 900 + highestCardOfStraight();
+        if (hasStraight){
+            return 3900 + hasStraight().get(hasStraight().size() - 1) * 15 + highestCardRank();
         }
-        if (hasThreeOfAKind()){
-            return 675 + getThreeRank();
+        if (hasThreeOfAKind){
+            return 3650 + threeOfAKind() * 15 + highestCardRank();
         }
-        if (hasTwoPair()){
-            return 450 + getPairRank();
+        if (hasTwoPair){
+            return 250 + hasTwoPair()[0] * 15 * 15 + hasTwoPair()[1] * 15 + highestCardRank();
         }
-        if (hasPair()){
-            return 225 + getPairRank();
+        if (hasPair){
+            return 15 + hasPair() * 15 + highestCardRank();
         }
-        return highestCardRank();
+        return highestCardRank(); // highest is 14 
     }
 
 }
