@@ -2,6 +2,7 @@ package com.example;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
@@ -37,6 +38,7 @@ public class PokerFX extends Application {
     private static final double WINDOW_WIDTH = 900;
     private static final double WINDOW_HEIGHT = 600;
 
+    
     private Game game;
     private Label playerStats;
     private Label currentPlayer;
@@ -73,6 +75,8 @@ public class PokerFX extends Application {
     private Button revealWinner;
     private HBox middleBox;
     private int tempChips = 0;
+    private HashMap<String, Integer> playerWins = new HashMap<>();
+
     private static String[][] musicSelection = {
             { "Relaxing Jazz", "/relaxingJazz.mp3" }, { "Less Relaxing Jazz", "/lessRelaxingJazz.mp3" },
             { "Lesser Relaxing Jazz", "/lesserRelaxingJazz.mp3" }, { "shrimp's Jazz", "/shrimpsJazz.mp3" },
@@ -219,6 +223,10 @@ public class PokerFX extends Application {
                 }
 
                 game = new Game(playerNames2);
+                playerWins.clear();
+                for (String name: playerNames2){
+                    playerWins.put(name, 0);
+                }
                 pokerTable();
 
             });
@@ -1018,7 +1026,7 @@ public class PokerFX extends Application {
 
     private void updateSeatBox(VBox seat, int i) {
         seat.getChildren().clear();
-        java.util.List<Player> players = game.getOverallPlayers();
+        ArrayList<Player> players = game.getOverallPlayers();
 
         if (i >= players.size()) {
             seat.setStyle("-fx-background-color: #b15050; -fx-background-radius: 10;");
@@ -1193,6 +1201,11 @@ public class PokerFX extends Application {
     private void showWinnerScreen() {
         winnerLabel = new Label();
         ArrayList<Player> winners = game.findWinner();
+        for (Player p: winners){
+            String name = p.getName();
+            int wins = playerWins.get(name);
+            playerWins.put(name, wins+1);
+        }
         int[] added = game.splitWinnings();
         String hand = game.handType(winners.get(0));
         middleBox.setTranslateY(15);
@@ -1315,6 +1328,25 @@ public class PokerFX extends Application {
                     + " | Number of loans: " + p.getLoans() + "\n");
             if (p.getLoans() > 0) {
                 loanPlayers.add(p.getName());
+            }
+        }
+        ArrayList<String> sortedWins = new ArrayList<>();
+
+        for (Player p: game.getOverallPlayers()) {
+            sortedWins.add(p.getName());
+        } // is this insertion sort ... i lowk forgot all the sorting stuff
+        for (int i = 1; i < sortedWins.size(); i++){
+            String wins = sortedWins.get(i);
+            int j = i - 1;
+            while (j >= 0 && playerWins.get(sortedWins.get(j)) < playerWins.get(wins)){
+                sortedWins.set(j+1, sortedWins.get(j));
+                j--;
+            }
+            sortedWins.set(j+1, wins);
+        }
+        for (String s: sortedWins){
+            if (playerWins.get(s)>0){
+                playerStats.setText(playerStats.getText() + s + " won " + playerWins.get(s) + " rounds\n");
             }
         }
         Label loanLabel = new Label();
