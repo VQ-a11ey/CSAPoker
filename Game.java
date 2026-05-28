@@ -267,7 +267,7 @@ public class Game {
         System.out.println();
         System.out.println(
                 "At any point in the game, you can enter 'hand' to check your hand and 'middle' to check the cards in the middle.");
-        System.out.println("Note that in this game, inputting the raise amount as X means 'raise to X' rather than 'raise by X'.");
+        System.out.println("Note that in this game, inputting the raise amount as X means 'raise by X' rather than 'raise to X'.");
         System.out.println("\nType anything to acknowledge these notes and get the round started.");
         sc.next();
         System.out.println();
