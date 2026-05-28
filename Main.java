@@ -8,5 +8,6 @@ public class Main {
         System.out.println();
         Game game = new Game(numPlayers);
         game.runEntireGame();
+        sc.close();
     }
 }
