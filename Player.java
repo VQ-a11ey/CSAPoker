@@ -53,16 +53,15 @@ public class Player {
     }
     
     public int[] bet(int toBet) { //will return [current, addToPot] values
-        int moreChips = toBet - bet;
-        if (moreChips <= chips) {
-            bet = toBet;
-            int[] result = {toBet, moreChips};
-            chips -= moreChips;
+        if (toBet <= chips) {
+            bet += toBet;
+            int[] result = {bet, toBet};
+            chips -= toBet;
             return result;
         } else { // all in
             System.out.println(name + " is going all in!");
             bet += chips;
-            int[] result = {chips + bet, chips};
+            int[] result = {bet, chips};
             chips = 0;
             return result;
         }
