@@ -109,7 +109,7 @@ public class Game {
 
     public int raise(Player p, int current) { // returns what current will be set to
         int input = -1;
-        while (input <= current) { // nextline?????
+        while (input < bigBlind) { // nextline?????
             System.out.print("input raise amount (integer): ");
             if (sc.hasNextInt()) {
                 input = sc.nextInt();
@@ -117,8 +117,8 @@ public class Game {
                 sc.next();
             }
         }
-        int[] toUpdate = p.bet(input);
-        current = toUpdate[0];
+        int[] toUpdate = p.bet(input + current - p.getBet());
+        current = Math.max(toUpdate[0], current);
         addToPot(toUpdate[1]);
         return current;
     }
@@ -219,7 +219,7 @@ public class Game {
                 } else if (decision.equals("raise")) {
                     current = raise(p, current);
                 } else if (decision.equals("call")) {
-                    int[] toUpdate = p.bet(current);
+                    int[] toUpdate = p.bet(current - p.getBet());
                     addToPot(toUpdate[1]);
                 } else if (decision.equals("check")) {
                     continue;
@@ -272,6 +272,11 @@ public class Game {
         sc.next();
         System.out.println();
         while (roundCount <= 4 && players.size() >= 2) {
+            if (roundCount != 0){
+                for (Player p: playersReference){
+                    p.setBet(0);
+                }
+            }
             if (roundCount == 0) {
                 dealCards();
                 runRound(bigBlind);
