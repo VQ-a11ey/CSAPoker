@@ -72,7 +72,7 @@ public class PokerFX extends Application {
     private ImageView chip10;
     private ImageView chip100;
     private ImageView chip1000;
-    private java.util.List<VBox> seatBoxes;
+    private ArrayList<VBox> seatBoxes;
     private Label communityLabel;
     private VBox pBox;
     private HBox potBottom;
@@ -547,7 +547,7 @@ public class PokerFX extends Application {
         int[] indices = game.getBlindIndices();
         int small = indices[0];
         int big = indices[1];
-        PauseTransition pause = new PauseTransition(Duration.seconds(2));
+        PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
         ArrayList<Player> players = game.getPlayers();
         pause.setOnFinished(event -> {
             lastActed = players.get(small);
@@ -560,7 +560,7 @@ public class PokerFX extends Application {
             updateCurrentPlayerInfo();
             updateSeats();
             raiseButton.setDisable(true);
-            PauseTransition pause2 = new PauseTransition(Duration.seconds(2));
+            PauseTransition pause2 = new PauseTransition(Duration.seconds(0.75));
             pause2.setOnFinished(event2 -> {
                 lastActed = players.get(big);
                 int[] bigUpdates = players.get(big).bet(game.getBigBlind());
@@ -572,7 +572,7 @@ public class PokerFX extends Application {
                 updateCurrentPlayerInfo();
                 updateSeats();
                 raiseButton.setDisable(true);
-                PauseTransition pause3 = new PauseTransition(Duration.seconds(2));
+                PauseTransition pause3 = new PauseTransition(Duration.seconds(0.75));
                 pause3.setOnFinished(event3 -> {
                     game.setFirstPlayer();
                     updateCurrentPlayerInfo();
@@ -838,7 +838,7 @@ public class PokerFX extends Application {
                     n.setVisible(false);
                 }
                 flip.setVisible(false);
-                PauseTransition p = new PauseTransition(Duration.seconds(1));
+                PauseTransition p = new PauseTransition(Duration.seconds(0.5));
                 p.setOnFinished(e -> {
                     dealerCommentary.setText("The betting rounds are over!");
                     if (game.getPlayers().size() > 1) {
@@ -873,8 +873,8 @@ public class PokerFX extends Application {
                                         + "; -fx-background-radius: 10; -fx-border-color: "
                                         + border + "; -fx-border-width: 2;");
                     }
-                    double delay = 1.2;
-                    PauseTransition pausee = new PauseTransition(Duration.seconds(2));
+                    double delay = 0.5;
+                    PauseTransition pausee = new PauseTransition(Duration.seconds(0.75));
                     if (game.getPlayers().size() == 1) {
                         dealerCommentary.setText("There is only one player left.");
                     }
@@ -930,39 +930,39 @@ public class PokerFX extends Application {
                             if (cardCount < 5 && game.getPlayers().size() > 1) {
                                 dealerCommentary.setText("All the cards will now be revealed!");
                                 if (cardCount == 0) {
-                                    PauseTransition pause = new PauseTransition(Duration.seconds(2));
+                                    PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
                                     pause.setOnFinished(eventtt -> {
                                         dealerCommentary.setText("Here's the flop!");
-                                        PauseTransition pause1 = new PauseTransition(Duration.seconds(1));
+                                        PauseTransition pause1 = new PauseTransition(Duration.seconds(0.3));
                                         pause1.setOnFinished(event1 -> {
                                             cards.add(deck.chooseCard());
                                             soundEffects("/cardflip.mp3");
                                             updateCurrentPlayerInfo();
-                                            PauseTransition pause2 = new PauseTransition(Duration.seconds(1));
+                                            PauseTransition pause2 = new PauseTransition(Duration.seconds(0.3));
                                             pause2.setOnFinished(event2 -> {
                                                 cards.add(deck.chooseCard());
                                                 soundEffects("/cardflip.mp3");
                                                 updateCurrentPlayerInfo();
-                                                PauseTransition pause3 = new PauseTransition(Duration.seconds(1));
+                                                PauseTransition pause3 = new PauseTransition(Duration.seconds(0.3));
                                                 pause3.setOnFinished(event3 -> {
                                                     cards.add(deck.chooseCard());
                                                     soundEffects("/cardflip.mp3");
                                                     updateCurrentPlayerInfo();
-                                                    PauseTransition pause4 = new PauseTransition(Duration.seconds(1.5));
+                                                    PauseTransition pause4 = new PauseTransition(Duration.seconds(0.5));
                                                     pause4.setOnFinished(event4 -> {
                                                         dealerCommentary.setText("Here's the turn!");
                                                         PauseTransition pause5 = new PauseTransition(
-                                                                Duration.seconds(1));
+                                                                Duration.seconds(0.5));
                                                         pause5.setOnFinished(event5 -> {
                                                             cards.add(deck.chooseCard());
                                                             soundEffects("/cardflip.mp3");
                                                             updateCurrentPlayerInfo();
                                                             PauseTransition pause6 = new PauseTransition(
-                                                                    Duration.seconds(1.5));
+                                                                    Duration.seconds(0.5));
                                                             pause6.setOnFinished(event6 -> {
                                                                 dealerCommentary.setText("Here's the river!");
                                                                 PauseTransition pause7 = new PauseTransition(
-                                                                        Duration.seconds(1));
+                                                                        Duration.seconds(0.5));
                                                                 pause7.setOnFinished(event7 -> {
                                                                     cards.add(deck.chooseCard());
                                                                     soundEffects("/cardflip.mp3");
@@ -988,13 +988,13 @@ public class PokerFX extends Application {
                                     });
                                     pause.play();
                                 } else if (cardCount == 3) {
-                                    PauseTransition pause = new PauseTransition(Duration.seconds(2));
+                                    PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
                                     pause.setOnFinished(eventtt -> {
                                         dealerCommentary.setText("Here's the turn!");
                                         cards.add(deck.chooseCard());
                                         updateCurrentPlayerInfo();
                                         soundEffects("/cardflip.mp3");
-                                        PauseTransition pause2 = new PauseTransition(Duration.seconds(1.5));
+                                        PauseTransition pause2 = new PauseTransition(Duration.seconds(0.75));
                                         pause2.setOnFinished(event2 -> {
                                             dealerCommentary.setText("Here's the river!");
                                             cards.add(deck.chooseCard());
@@ -1007,7 +1007,7 @@ public class PokerFX extends Application {
                                     });
                                     pause.play();
                                 } else if (cardCount == 4) {
-                                    PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
+                                    PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
                                     pause.setOnFinished(eventtt -> {
                                         dealerCommentary.setText("Here's the river!");
                                         cards.add(deck.chooseCard());
