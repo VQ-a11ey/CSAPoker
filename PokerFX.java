@@ -2,8 +2,12 @@ package com.example;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,12 +19,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.BackgroundPosition;
 import javafx.scene.layout.BackgroundRepeat;
 import javafx.scene.layout.BackgroundSize;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -35,13 +37,12 @@ public class PokerFX extends Application {
 
     private static final double WINDOW_WIDTH = 900;
     private static final double WINDOW_HEIGHT = 600;
-    private static final double WINDOW_RATIO = WINDOW_WIDTH / WINDOW_HEIGHT;
 
+    
     private Game game;
     private Label playerStats;
     private Label currentPlayer;
     private Button callorcheckButton, foldButton, raiseButton;
-    private Label playerHand;
     private Label cards;
     private MediaPlayer mediaPlayer;
     // private TextField raiseField;
@@ -52,10 +53,8 @@ public class PokerFX extends Application {
     private Label dealerCommentary;
     private StackPane rootPane;
     private HBox cardBox;
-    private HBox cardBoxx;
-    private VBox enlargedHand;
-    private HBox bottomBox;
     private HBox communityBox;
+    private VBox bottomControls;
     private VBox potBox;
     private Label potLabel;
     private StackPane stack1;
@@ -66,36 +65,66 @@ public class PokerFX extends Application {
     private ImageView chip10;
     private ImageView chip100;
     private ImageView chip1000;
-    private java.util.List<VBox> seatBoxes;
+    private ArrayList<VBox> seatBoxes;
     private Label communityLabel;
     private VBox pBox;
     private HBox potBottom;
     private HBox potTop;
+    private Button flip;
+    private Button flipb;
+    private Button revealWinner;
+    private HBox middleBox;
+    private int tempChips = 0;
+    private HashMap<String, Integer> playerWins = new HashMap<>();
+
     private static String[][] musicSelection = {
-        {"Relaxing Jazz", "/relaxingJazz.mp3"}, {"Less Relaxing Jazz", "/lessRelaxingJazz.mp3"}, {"Lesser Relaxing Jazz", "/lesserRelaxingJazz.mp3"},{"shrimp's Jazz", "/shrimpsJazz.mp3"},
+            { "Relaxing Jazz", "/relaxingJazz.mp3" }, { "Less Relaxing Jazz", "/lessRelaxingJazz.mp3" },
+            { "Lesser Relaxing Jazz", "/lesserRelaxingJazz.mp3" }, { "shrimp's Jazz", "/shrimpsJazz.mp3" },
     };
     private int selectedJazz = 0;
 
-    private void playBeautifulJazzMusic(int track){
-        if (mediaPlayer != null){
+    private void playBeautifulJazzMusic(int track) {
+        if (mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.dispose();
             mediaPlayer = null;
         }
-        if (track < 0) return;
+        if (track < 0)
+            return;
         URL musicUrl = getClass().getResource(musicSelection[track][1]);
-        if (musicUrl != null){
+        if (musicUrl != null) {
             Media media = new Media(musicUrl.toExternalForm());
             mediaPlayer = new MediaPlayer(media);
-            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE); //loop forever
+            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE); // loop forever
             mediaPlayer.play();
+        }
+    }
+
+    private void soundEffects(String path) {
+        URL soundUrl = getClass().getResource(path);
+        if (soundUrl != null) {
+            Media sound = new Media(soundUrl.toExternalForm());
+            MediaPlayer soundPlayer = new MediaPlayer(sound);
+            soundPlayer.setCycleCount(1);
+            soundPlayer.play();
         }
     }
 
     @Override
     public void start(Stage stage) {
         // for background
-        rootPane = createBackground();
+        rootPane = new StackPane();
+
+        URL bgUrl = getClass().getResource("/pokerbackground1.png");
+        Image bgImage = new Image(bgUrl.toExternalForm());
+        BackgroundImage backgroundImage = new BackgroundImage(
+                bgImage,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                new BackgroundSize(100, 100, true, true, false, true));
+        rootPane.setBackground(
+                new Background(backgroundImage));
         // for music
         // start game
         Label intro = new Label("Welcome to Poker!");
@@ -111,7 +140,7 @@ public class PokerFX extends Application {
         HBox trackBox = new HBox(8);
         trackBox.setAlignment(Pos.CENTER);
         Button[] trackButtons = new Button[4];
-        for (int i = 0; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             final int index = i;
             Button button = new Button(musicSelection[i][0]);
             button.setOnAction(e -> {
@@ -136,8 +165,7 @@ public class PokerFX extends Application {
         stage.setTitle("Poker");
         Image icon = new Image("poker symbol.png");
         stage.getIcons().add(icon);
-        //stage.setResizable(false);
-        lockWindowRatio(stage);
+        stage.setResizable(false);
         stage.show();
         // set on action assigns actions to buttons
         startGame.setOnAction(e -> {
@@ -195,6 +223,10 @@ public class PokerFX extends Application {
                 }
 
                 game = new Game(playerNames2);
+                playerWins.clear();
+                for (String name: playerNames2){
+                    playerWins.put(name, 0);
+                }
                 pokerTable();
 
             });
@@ -238,20 +270,11 @@ public class PokerFX extends Application {
 
         StackPane speechBubble = new StackPane(bubble, dealerCommentary);
         speechBubble.setStyle("-fx-background-color: transparent;");
-        // speechBubble.getChildren().addAll(bubble, dealerCommentary);
         speechBubble.setAlignment(Pos.TOP_CENTER);
         speechBubble.translateYProperty().setValue((WINDOW_HEIGHT - dealerImage.getImage().getHeight()) / 2);
         speechBubble.setTranslateY(speechBubble.getTranslateY() - 10);
 
         topCommentary.getChildren().addAll(dealerImage, speechBubble);
-
-        // player seating
-      //  VBox playerSeat = new VBox(6);
-       // playerSeat.setAlignment(Pos.CENTER_LEFT);
-      //  playerSeat.setPadding(new Insets(10, 14, 10, 14));
-      //  playerSeat.setStyle(
-      //          "-fx-background-color: #a1bcc4; -fx-background-radius: 10; -fx-border-color: #6d6448; -fx-border-radius: 10;");
-      //  playerSeat.setMaxWidth(200);
 
         playerStats = new Label("Stats over here");
         playerStats.setStyle("-fx-text-fill: white;");
@@ -260,22 +283,22 @@ public class PokerFX extends Application {
         seatBoxes = new ArrayList<>();
         VBox leftBoxes = new VBox(8);
         leftBoxes.setAlignment(Pos.CENTER_LEFT);
-        leftBoxes.setPadding(new Insets(8,6,8,6));
+        leftBoxes.setPadding(new Insets(8, 6, 8, 6));
         VBox rightBoxes = new VBox(8);
         rightBoxes.setAlignment(Pos.CENTER_RIGHT);
-        rightBoxes.setPadding(new Insets(8,6,8,6));
-
-        for (int i = 0; i < 6; i++){
+        rightBoxes.setPadding(new Insets(8, 6, 8, 6));
+        potLabel = new Label();
+        for (int i = 0; i < 6; i++) {
             VBox playerSeat = playerSeatBox(i);
             seatBoxes.add(playerSeat);
-            if (i < 3){
+            if (i < 3) {
                 leftBoxes.getChildren().add(playerSeat);
             } else {
                 rightBoxes.getChildren().add(playerSeat);
             }
         }
-        
-        HBox middleBox = new HBox(20);
+
+        middleBox = new HBox(20);
         VBox commBox = new VBox(6);
         pBox = new VBox(10);
         commBox.setAlignment(Pos.CENTER);
@@ -290,6 +313,7 @@ public class PokerFX extends Application {
         potLabel = new Label(); // how many chips in the pot
         potLabel.setStyle("-fx-text-fill: white; -fx-font-size: 20px;");
         potLabel.setAlignment(Pos.CENTER);
+        potLabel.setTextAlignment(TextAlignment.CENTER);
         potBox = new VBox(10);
         stack1 = new StackPane();
         stack10 = new StackPane();
@@ -298,7 +322,7 @@ public class PokerFX extends Application {
         potBottom = new HBox(5);
         potTop = new HBox(5);
         potBox.getChildren().addAll(potTop, potBottom);
-        stack1.setManaged(false); 
+        stack1.setManaged(false);
         stack10.setManaged(false);
         stack100.setManaged(false);
         stack1000.setManaged(false);
@@ -312,14 +336,13 @@ public class PokerFX extends Application {
         StackPane.setAlignment(commBox, Pos.CENTER);
         StackPane.setAlignment(communityBox, Pos.CENTER);
         StackPane.setAlignment(middleBox, Pos.CENTER);
+        middleBox.setTranslateY(-15);
 
         // current player's hand + control buttons
-        VBox bottomControls = new VBox(8);
+        bottomControls = new VBox(8);
         bottomControls.setAlignment(Pos.CENTER);
         bottomControls.setPadding(new Insets(8, 20, 12, 20));
         currentPlayer = new Label();
-        playerHand = new Label("Your Hand");
-        playerHand.setStyle("-fx-text-fill: white; -fx-font-size: 13px;");
 
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER);
@@ -355,8 +378,17 @@ public class PokerFX extends Application {
         foldButton.setOnAction(e -> {
             if (!canAct())
                 return;
+            soundEffects("/awwdangit.mp3");
             dealerCommentary.setText(game.getCurrentPlayer().getName() + " folded");
             game.fold();
+            if (!winnershown) {
+                flip.setVisible(true);
+                flip.setManaged(true);
+            }
+            if (flipb.isVisible()) {
+                flipb.setVisible(false);
+                flipb.setManaged(false);
+            }
             refreshUI();
         });
 
@@ -365,22 +397,29 @@ public class PokerFX extends Application {
                 return;
             if (game.canCheck()) {
                 dealerCommentary.setText(game.getCurrentPlayer().getName() + " checked");
+                soundEffects("/checkbutton.mp3");
                 game.check();
-            } else if (game.canCall() && game.getAmountToCall() != game.getCurrentPlayer().getChips()) {
+            } else if (game.canCall() && game.getAmountToCall() < game.getCurrentPlayer().getChips()) {
                 dealerCommentary.setText(game.getCurrentPlayer().getName() + " called");
+                soundEffects("/pokerchips.mp3");
                 game.call();
             } else {
                 dealerCommentary.setText(game.getCurrentPlayer().getName() + " went all in!");
+                soundEffects("/pokerchips.mp3");
                 game.call();
             }
             refreshUI();
         });
 
         raiseButton.setOnAction(e -> {
+            soundEffects("/igotthis.mp3");
             raiseBox.setVisible(true);
             raiseBox.setManaged(true);
             callorcheckButton.setDisable(true);
             foldButton.setDisable(true);
+            flip.setVisible(false);
+            flip.setManaged(false);
+            bottomControls.translateYProperty().add(5);
         });
         confirmRaise.setOnAction(e -> {
             if (!canAct())
@@ -396,11 +435,17 @@ public class PokerFX extends Application {
                 } else {
                     dealerCommentary.setText(game.getCurrentPlayer().getName() + " raised by " + amount);
                 }
+                soundEffects("/pokerchips.mp3");
                 game.raise(amount);
                 raiseBox.setVisible(false);
                 raiseBox.setManaged(false);
                 callorcheckButton.setDisable(false);
                 foldButton.setDisable(false);
+                if (!flipb.isVisible()) {
+                    flip.setVisible(true);
+                    flip.setManaged(true);
+                }
+                bottomControls.translateYProperty().subtract(5);
                 refreshUI();
             } catch (Exception ex) {
                 dealerCommentary.setText("not valid");
@@ -411,42 +456,43 @@ public class PokerFX extends Application {
             raiseBox.setManaged(false);
             callorcheckButton.setDisable(false);
             foldButton.setDisable(false);
-
+            if (!flipb.isVisible()) {
+                flip.setVisible(true);
+                flip.setManaged(true);
+            }
+            bottomControls.translateYProperty().subtract(5);
         });
+        cardBox = new HBox(6);
+        cardBox.setAlignment(Pos.CENTER);
+        flip = new Button();
+        flipb = new Button();
+        flipb.setVisible(false);
         updateCurrentPlayerInfo();
 
         controls.getChildren().addAll(callorcheckButton, foldButton, raiseButton);
 
-        Button flip = new Button("Show Cards");
+        flip = new Button("Show Cards");
 
         flip.setOnAction(e -> {
+            soundEffects("/cardflip.mp3");
             ImageView cardOnee = getCards(game.getCurrentPlayer().getCardOne());
             ImageView cardTwoo = getCards(game.getCurrentPlayer().getCardTwo());
-            cardOnee.setFitHeight(40);
+            cardOnee.setFitHeight(80);
             cardOnee.setPreserveRatio(true);
-            cardTwoo.setFitHeight(40);
+            cardTwoo.setFitHeight(80);
             cardTwoo.setPreserveRatio(true);
             cardBox.getChildren().clear();
             cardBox.getChildren().addAll(cardOnee, cardTwoo);
-            ImageView cardOneee = getCards(game.getCurrentPlayer().getCardOne());
-            ImageView cardTwooo = getCards(game.getCurrentPlayer().getCardTwo());
-            cardOneee.setFitHeight(80);
-            cardOneee.setPreserveRatio(true);
-            cardTwooo.setFitHeight(80);
-            cardTwooo.setPreserveRatio(true);
-            cardBoxx.getChildren().clear();
-            cardBoxx.getChildren().addAll(cardOneee, cardTwooo);
             flip.setVisible(false);
             flip.setManaged(false);
-            enlargedHand.setVisible(true);
-            enlargedHand.setManaged(true);
-            Button flipb = new Button("Hide Cards");
+            flipb = new Button("Hide Cards");
             flipb.setOnAction(evv -> {
+                soundEffects("/cardflipback.mp3");
                 ImageView cardOne = new ImageView("/cardBack.png");
                 ImageView cardTwo = new ImageView("/cardBack.png");
-                cardOne.setFitHeight(40);
+                cardOne.setFitHeight(80);
                 cardOne.setPreserveRatio(true);
-                cardTwo.setFitHeight(40);
+                cardTwo.setFitHeight(80);
                 cardTwo.setPreserveRatio(true);
                 cardBox.getChildren().clear();
                 cardBox.getChildren().addAll(cardOne, cardTwo);
@@ -454,30 +500,19 @@ public class PokerFX extends Application {
                 flipb.setManaged(false);
                 flip.setVisible(true);
                 flip.setManaged(true);
-                enlargedHand.setVisible(false);
-            enlargedHand.setManaged(false);
             });
             bottomControls.getChildren().add(flipb);
         });
-        enlargedHand = new VBox(6);
-        bottomBox = new HBox(20);
-        cardBoxx = new HBox(3);
-        enlargedHand.getChildren().addAll(playerHand, cardBoxx);
-        playerHand.setText(game.getCurrentPlayer().getName() + "'s Hand");
-        playerHand.setTextAlignment(TextAlignment.CENTER);
         bottomControls.getChildren().addAll(currentPlayer, controls, raiseBox, flip);
-        bottomBox.getChildren().addAll(enlargedHand, bottomControls);
-        bottomBox.setAlignment(Pos.CENTER);
-        bottomBox.translateYProperty().setValue(-20);
-        enlargedHand.setVisible(false);
-        enlargedHand.setManaged(false);
+        bottomControls.translateYProperty().setValue(-55);
         javafx.scene.layout.BorderPane table = new javafx.scene.layout.BorderPane();
         table.setStyle("-fx-background-color:transparent;");
         table.setTop(topCommentary);
+        topCommentary.translateYProperty().setValue(30);
         middleBox.setMaxWidth(Double.MAX_VALUE);
         javafx.scene.layout.BorderPane.setAlignment(middleBox, Pos.CENTER);
         table.setCenter(middleBox);
-        table.setBottom(bottomBox);
+        table.setBottom(bottomControls);
         table.setLeft(leftBoxes);
         table.setRight(rightBoxes);
         rootPane.getChildren().clear();
@@ -489,30 +524,35 @@ public class PokerFX extends Application {
         int[] indices = game.getBlindIndices();
         int small = indices[0];
         int big = indices[1];
-        PauseTransition pause = new PauseTransition(Duration.seconds(2));
+        PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
         ArrayList<Player> players = game.getPlayers();
         pause.setOnFinished(event -> {
             int[] smallUpdates = players.get(small).bet(game.getSmallBlind());
             game.addToPot(smallUpdates[1]);
-            dealerCommentary.setText(game.getPlayers().get(small).getName() + " paid the small blind of " + game.getSmallBlind());
+            soundEffects("/pokerchips.mp3");
+            dealerCommentary.setText(
+                    game.getPlayers().get(small).getName() + " paid the small blind of " + game.getSmallBlind());
             game.setCurrentPlayer(small);
             updateCurrentPlayerInfo();
             updateSeats();
             raiseButton.setDisable(true);
-            PauseTransition pause2 = new PauseTransition(Duration.seconds(2));
+            PauseTransition pause2 = new PauseTransition(Duration.seconds(0.75));
             pause2.setOnFinished(event2 -> {
                 int[] bigUpdates = players.get(big).bet(game.getBigBlind());
                 game.addToPot(bigUpdates[1]);
-                dealerCommentary.setText(game.getPlayers().get(big).getName() + " paid the big blind of " + game.getBigBlind());
+                soundEffects("/pokerchips.mp3");
+                dealerCommentary
+                        .setText(game.getPlayers().get(big).getName() + " paid the big blind of " + game.getBigBlind());
                 game.setCurrentPlayer(big);
                 updateCurrentPlayerInfo();
                 updateSeats();
                 raiseButton.setDisable(true);
-                PauseTransition pause3 = new PauseTransition(Duration.seconds(2));
+                PauseTransition pause3 = new PauseTransition(Duration.seconds(0.75));
                 pause3.setOnFinished(event3 -> {
                     game.setFirstPlayer();
                     updateCurrentPlayerInfo();
                     updateSeats();
+                    soundEffects("/letsgogambling.mp3");
                     dealerCommentary.setText(game.getCurrentPlayer().getName() + ", you're up first!");
                     callorcheckButton.setDisable(false);
                     foldButton.setDisable(false);
@@ -545,9 +585,11 @@ public class PokerFX extends Application {
         currentPlayer.setTextFill(Color.SKYBLUE);
         playerStats.setText(current.getName() + " | Chips: " + current.getChips() + "| Current Bet: "
                 + game.getCurrent() + "| Pot: " + game.getPot());
-
-
+        if (game.getMiddleCards().size() > communityBox.getChildren().size()) {
+            soundEffects("/cardflip.mp3");
+        }
         communityBox.getChildren().clear();
+
         if (game.getMiddleCards().isEmpty()) {
             Label noCards = new Label("No community cards yet!");
             noCards.setStyle("-fx-text-fill:white; -fx-font-size: 13px");
@@ -562,83 +604,183 @@ public class PokerFX extends Application {
                 communityBox.getChildren().add(cardd);
             }
         }
+
+        ImageView cardBack1 = new ImageView("/cardBack.png");
+        ImageView cardBack2 = new ImageView("/cardBack.png");
+        cardBack1.setFitHeight(80);
+        cardBack1.setPreserveRatio(true);
+        cardBack2.setFitHeight(80);
+        cardBack2.setPreserveRatio(true);
+        cardBox.getChildren().clear();
+        cardBox.getChildren().addAll(cardBack1, cardBack2);
+        if (flipb.isVisible()) {
+            soundEffects("/cardflipback.mp3");
+        }
+        flipb.setVisible(false);
+        flipb.setManaged(false);
+        if (!winnershown) {
+            flip.setVisible(true);
+            flip.setManaged(true);
+        }
         updatePot();
     }
 
-    private void updatePot(){
-        int pot = game.getPot();
-        if (pot == 1){
-            potLabel.setText(pot + " chip");
-        }
-        else potLabel.setText(pot + " chips");
-        int num1000 = pot / 1000;
-        pot -= num1000 * 1000;
-        int num100 = pot / 100;
-        pot -= num100 * 100;
-        int num10 = pot / 10;
-        pot -= num10 * 10;
-        int num1 = pot;
-        stack1000.getChildren().clear();
-        stack100.getChildren().clear();
-        stack10.getChildren().clear();
-        stack1.getChildren().clear();
-        potBottom.getChildren().clear();
-        potTop.getChildren().clear();
-        ArrayList<StackPane> visibleStacks = new ArrayList<>();
-        if (num1000 > 0){
-            stack1000.setManaged(true);
-            visibleStacks.add(stack1000);
-            generateStack(stack1000, chip1000, num1000);
-        }
-        else {
-            stack1000.setManaged(false);
-        }
-        if (num100 > 0){
-            stack100.setManaged(true);
-            visibleStacks.add(stack100);
-            generateStack(stack100, chip100, num100);
-        }
-        else {
-            stack100.setManaged(false);
-        }  
-        if (num10 > 0){
-            stack10.setManaged(true);
-            visibleStacks.add(stack10);
-            generateStack(stack10, chip10, num10);
-        }
-        else {
-            stack10.setManaged(false);
-        }
-        if (num1 > 0){
-            visibleStacks.add(stack1);
-            stack1.setManaged(true);
-            generateStack(stack1, chip1, num1);
-        }
-        else {
-            stack1.setManaged(false);
-        }
-        potLabel.setStyle("-fx-text-fill: white; -fx-font-size: 20px;");
-        for (int i = 0; i < visibleStacks.size(); i++){
-            if (i < 2){
-                potBottom.getChildren().add(visibleStacks.get(i));
+    private void updatePot() {
+        Timeline timeline = new Timeline();
+        ArrayList<ImageView> chips = new ArrayList<>();
+        if (tempChips < game.getPot()) {
+            int amount = game.getPot() - tempChips;
+            rootPane.applyCss();
+            rootPane.layout();
+            VBox s;
+            if (game.getPot() > game.getSmallBlind() + game.getBigBlind()) {
+                int index = game.getCurrentIndex() - 1;
+                if (index < 0) {
+                    index += game.getPlayers().size();
+                }
+                s = seatBoxes.get(game.getOverallPlayers().indexOf(game.getPlayers().get(index)));
+            } else {
+                s = seatBoxes.get(game.getOverallPlayers().indexOf(game.getCurrentPlayer()));
             }
-            else {
-                potTop.getChildren().add(visibleStacks.get(i));
-            }
-        }
-        potBox.setAlignment(Pos.CENTER);
-        pBox.setAlignment(Pos.CENTER);
+            javafx.geometry.Point2D sourcePoint = rootPane
+                    .sceneToLocal(s.localToScene(s.getWidth() / 2, s.getHeight() / 2));
 
+            int num1000 = amount / 1000;
+            amount -= num1000 * 1000;
+            int num100 = amount / 100;
+            amount -= num100 * 100;
+            int num10 = amount / 10;
+            amount -= num10 * 10;
+            int num1 = amount;
+            for (int i = 0; i < num1000; i++) {
+                ImageView chipCopy = new ImageView(chip1000.getImage());
+                chipCopy.setFitHeight(50);
+                chipCopy.setPreserveRatio(true);
+                chips.add(chipCopy);
+            }
+            for (int i = 0; i < num100; i++) {
+                ImageView chipCopy = new ImageView(chip100.getImage());
+                chipCopy.setFitHeight(50);
+                chipCopy.setPreserveRatio(true);
+                chips.add(chipCopy);
+            }
+            for (int i = 0; i < num10; i++) {
+                ImageView chipCopy = new ImageView(chip10.getImage());
+                chipCopy.setFitHeight(50);
+                chipCopy.setPreserveRatio(true);
+                chips.add(chipCopy);
+            }
+            for (int i = 0; i < num1; i++) {
+                ImageView chipCopy = new ImageView(chip1.getImage());
+                chipCopy.setFitHeight(50);
+                chipCopy.setPreserveRatio(true);
+                chips.add(chipCopy);
+            }
+            // animate chips moving from player to pot
+            javafx.geometry.Point2D potPoint = rootPane
+                    .sceneToLocal(potBox.localToScene(potBox.getWidth() / 2, potBox.getHeight() / 2));
+            for (int i = 0; i < chips.size(); i++) {
+                ImageView chip = chips.get(i);
+                chip.setManaged(false);
+                rootPane.getChildren().add(chip);
+                chip.relocate(sourcePoint.getX() - chip.getLayoutBounds().getWidth() / 2,
+                        sourcePoint.getY() - chip.getLayoutBounds().getHeight() / 2);
+                double delay = i * 0.02;
+                KeyFrame keyFrame = new KeyFrame(Duration.seconds(delay), e -> {
+                    TranslateTransition transition = new TranslateTransition(Duration.seconds(0.6), chip);
+                    transition.setByX(potPoint.getX() - sourcePoint.getX());
+                    transition.setByY(potPoint.getY() - sourcePoint.getY());
+                    transition.play();
+                });
+                timeline.getKeyFrames().add(keyFrame);
+                // KeyFrame keyFrame2 = new KeyFrame(Duration.seconds(delay), null);
+                // timeline.getKeyFrames().add(keyFrame2);
+            }
+            KeyFrame keyFrame = new KeyFrame(Duration.seconds((chips.size() - 1) * 0.02 + 0.6), e -> {
+
+            });
+            timeline.getKeyFrames().add(keyFrame);
+        }
+        timeline.play();
+        timeline.setOnFinished(e -> {
+            for (ImageView chip : chips) {
+                rootPane.getChildren().remove(chip);
+            }
+            int pot = game.getPot();
+            if (pot == 1) {
+                potLabel.setText(pot + " chip");
+            } else
+                potLabel.setText(pot + " chips");
+            int num1000 = pot / 1000;
+            pot -= num1000 * 1000;
+            int num100 = pot / 100;
+            pot -= num100 * 100;
+            int num10 = pot / 10;
+            pot -= num10 * 10;
+            int num1 = pot;
+            stack1000.getChildren().clear();
+            stack100.getChildren().clear();
+            stack10.getChildren().clear();
+            stack1.getChildren().clear();
+            potBottom.getChildren().clear();
+            potBottom.setAlignment(Pos.CENTER);
+            potTop.getChildren().clear();
+            // potTop.setAlignment(Pos.CENTER);
+            ArrayList<StackPane> visibleStacks = new ArrayList<>();
+            int chipHeight = 50;
+            int offset = 4;
+            if (num1000 > 0) {
+                stack1000.setManaged(true);
+                visibleStacks.add(stack1000);
+                generateStack(stack1000, chip1000, num1000, chipHeight, offset);
+            } else {
+                stack1000.setManaged(false);
+            }
+            if (num100 > 0) {
+                stack100.setManaged(true);
+                visibleStacks.add(stack100);
+                generateStack(stack100, chip100, num100, chipHeight, offset);
+            } else {
+                stack100.setManaged(false);
+            }
+            if (num10 > 0) {
+                stack10.setManaged(true);
+                visibleStacks.add(stack10);
+                generateStack(stack10, chip10, num10, chipHeight, offset);
+            } else {
+                stack10.setManaged(false);
+            }
+            if (num1 > 0) {
+                visibleStacks.add(stack1);
+                stack1.setManaged(true);
+                generateStack(stack1, chip1, num1, chipHeight, offset);
+            } else {
+                stack1.setManaged(false);
+            }
+            potLabel.setStyle("-fx-text-fill: white; -fx-font-size: 20px;");
+            for (int i = 0; i < visibleStacks.size(); i++) {
+                if (i < 2) {
+                    potBottom.getChildren().add(visibleStacks.get(i));
+                } else {
+                    potTop.getChildren().add(visibleStacks.get(i));
+                }
+            }
+            potBox.setAlignment(Pos.CENTER);
+            pBox.setAlignment(Pos.CENTER);
+            tempChips = game.getPot();
+        });
     }
-    private void generateStack(StackPane stack, ImageView chip, int amount){
-        for (int i = 0; i < amount; i++){
+
+    private void generateStack(StackPane stack, ImageView chip, int amount, int height, double offset) {
+        for (int i = 0; i < amount; i++) {
             ImageView chipCopy = new ImageView(chip.getImage());
-            chipCopy.setFitHeight(50);
+            chipCopy.setFitHeight(height);
             chipCopy.setPreserveRatio(true);
-            chipCopy.setTranslateY(-i * 4);
+            chipCopy.setTranslateY(-i * offset);
             stack.getChildren().add(chipCopy);
         }
     }
+
     //
     // later just stuff all update() methods into here and just call this every time
     // instead of all the stuff individually
@@ -649,36 +791,247 @@ public class PokerFX extends Application {
         updateCurrentPlayerInfo();
         updateActionState();
         updateButtons();
-        updateSeats();
-        if (game.getRoundCount() == 4 && !winnershown) {
-            winnershown = true;
-            showWinnerScreen();
+        PauseTransition pp;
+        if (dealerCommentary.getText().contains("checked") || dealerCommentary.getText().contains("folded")) {
+            pp = new PauseTransition(Duration.seconds(0.1));
+        } else {
+            pp = new PauseTransition(Duration.seconds(0.3));
         }
+        pp.play();
+        pp.setOnFinished(eeeee -> {
+            updateSeats();
+            if (game.getRoundCount() == 4 && !winnershown) {
+                winnershown = true;
+                int cardCount = game.getMiddleCards().size();
+                ArrayList<Card> cards = game.getMiddleCards();
+                Deck deck = game.getDeck();
+                for (javafx.scene.Node n : bottomControls.getChildren()) {
+                    n.setVisible(false);
+                }
+                flip.setVisible(false);
+                PauseTransition p = new PauseTransition(Duration.seconds(0.5));
+                p.setOnFinished(e -> {
+                    dealerCommentary.setText("The betting rounds are over!");
+                    if (game.getPlayers().size() > 1) {
+                        revealWinner = new Button("Reveal Winner");
+                        rootPane.getChildren().add(revealWinner);
+                        revealWinner.setStyle(
+                                "-fx-background-color: #f9ea45; -fx-font-size: 16px; -fx-padding: 10px 20px; -fx-border-color: #9b761f; -fx-border-width: 2px; -fx-border-radius: 5px;");
+                        revealWinner.setVisible(false);
+                        revealWinner.setOnAction(ee -> {
+                            showWinnerScreen();
+                        });
+                        StackPane.setAlignment(revealWinner, Pos.BOTTOM_CENTER);
+                        StackPane.setMargin(revealWinner, new Insets(0, 0, 40, 0));
+                    }
+                    int index = game.getOverallPlayers().indexOf(game.getCurrentPlayer());
+                    boolean isInGame = game.getPlayers().contains(game.getCurrentPlayer());
+                    VBox seat = seatBoxes.get(index);
+                    String background;
+                    String border;
+                    if (isInGame) {
+                        background = "#b0d6bd";
+                        border = "#3f855d";
+                        seat.setStyle(
+                                "-fx-background-color: " + background
+                                        + "; -fx-background-radius: 10; -fx-border-color: "
+                                        + border + "; -fx-border-width: 2;");
+                    } else {
+                        background = "#b0d6bd4b";
+                        border = "#3f855d97";
+                        seat.setStyle(
+                                "-fx-background-color: " + background
+                                        + "; -fx-background-radius: 10; -fx-border-color: "
+                                        + border + "; -fx-border-width: 2;");
+                    }
+                    double delay = 0.5;
+                    PauseTransition pausee = new PauseTransition(Duration.seconds(0.75));
+                    if (game.getPlayers().size() == 1) {
+                        dealerCommentary.setText("There is only one player left.");
+                    }
+                    pausee.setOnFinished(event -> {
+                        dealerCommentary.setText("Everyone's cards are revealed!");
+                        Timeline timeline = new Timeline();
+                        int num = 0;
+                        if (game.getPlayers().size() > 1) {
+                            for (int i = 0; i < seatBoxes.size(); i++) {
+                                if (i < game.getOverallPlayers().size()
+                                        && game.getPlayers().contains(game.getOverallPlayers().get(i))) {
+                                    num++;
+                                    double totalDelay = num * delay;
+                                    final int seatIndex = i;
+                                    KeyFrame keyFrame = new KeyFrame(Duration.seconds(totalDelay), eventt -> {
+                                        soundEffects("/cardflip.mp3");
+                                        ImageView cardOnee = getCards(
+                                                game.getOverallPlayers().get(seatIndex).getCardOne());
+                                        ImageView cardTwoo = getCards(
+                                                game.getOverallPlayers().get(seatIndex).getCardTwo());
+                                        cardOnee.setFitHeight(80);
+                                        cardOnee.setPreserveRatio(true);
+                                        cardTwoo.setFitHeight(80);
+                                        cardTwoo.setPreserveRatio(true);
+                                        HBox cardBoxx = new HBox(3);
+                                        cardBoxx.getChildren().clear();
+                                        cardBoxx.getChildren().addAll(cardOnee, cardTwoo);
+                                        seatBoxes.get(seatIndex).getChildren().clear();
+                                        Label playerNameAndChips = new Label(
+                                                game.getOverallPlayers().get(seatIndex).getName()
+                                                        + ": " + game.getOverallPlayers().get(seatIndex).getChips()
+                                                        + " chips");
+                                        playerNameAndChips.setStyle("-fx-text-fill: black; -fx-font-size: 11px; ");
+                                        seatBoxes.get(seatIndex).getChildren().addAll(playerNameAndChips, cardBoxx);
+                                    });
+                                    timeline.getKeyFrames().add(keyFrame);
+
+                                }
+                            }
+                        } else {
+                            KeyFrame keyFrame = new KeyFrame(Duration.seconds(delay), eventt -> {
+                                Label playerNameAndChips = new Label(game.getCurrentPlayer().getName() + ": "
+                                        + game.getCurrentPlayer().getChips() + " chips");
+                                playerNameAndChips.setStyle("-fx-text-fill: black; -fx-font-size: 11px; ");
+                                seat.getChildren().set(0, playerNameAndChips);
+                            });
+                            timeline.getKeyFrames().add(keyFrame);
+                            showWinnerScreen();
+                        }
+
+                        timeline.play();
+                        timeline.setOnFinished(eventttt -> {
+                            if (cardCount < 5 && game.getPlayers().size() > 1) {
+                                dealerCommentary.setText("All the cards will now be revealed!");
+                                if (cardCount == 0) {
+                                    PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
+                                    pause.setOnFinished(eventtt -> {
+                                        dealerCommentary.setText("Here's the flop!");
+                                        PauseTransition pause1 = new PauseTransition(Duration.seconds(0.3));
+                                        pause1.setOnFinished(event1 -> {
+                                            cards.add(deck.chooseCard());
+                                            soundEffects("/cardflip.mp3");
+                                            updateCurrentPlayerInfo();
+                                            PauseTransition pause2 = new PauseTransition(Duration.seconds(0.3));
+                                            pause2.setOnFinished(event2 -> {
+                                                cards.add(deck.chooseCard());
+                                                soundEffects("/cardflip.mp3");
+                                                updateCurrentPlayerInfo();
+                                                PauseTransition pause3 = new PauseTransition(Duration.seconds(0.3));
+                                                pause3.setOnFinished(event3 -> {
+                                                    cards.add(deck.chooseCard());
+                                                    soundEffects("/cardflip.mp3");
+                                                    updateCurrentPlayerInfo();
+                                                    PauseTransition pause4 = new PauseTransition(Duration.seconds(0.5));
+                                                    pause4.setOnFinished(event4 -> {
+                                                        dealerCommentary.setText("Here's the turn!");
+                                                        PauseTransition pause5 = new PauseTransition(
+                                                                Duration.seconds(1));
+                                                        pause5.setOnFinished(event5 -> {
+                                                            cards.add(deck.chooseCard());
+                                                            soundEffects("/cardflip.mp3");
+                                                            updateCurrentPlayerInfo();
+                                                            PauseTransition pause6 = new PauseTransition(
+                                                                    Duration.seconds(0.5));
+                                                            pause6.setOnFinished(event6 -> {
+                                                                dealerCommentary.setText("Here's the river!");
+                                                                PauseTransition pause7 = new PauseTransition(
+                                                                        Duration.seconds(0.5));
+                                                                pause7.setOnFinished(event7 -> {
+                                                                    cards.add(deck.chooseCard());
+                                                                    soundEffects("/cardflip.mp3");
+                                                                    updateCurrentPlayerInfo();
+                                                                    revealWinner.setVisible(true);
+                                                                    dealerCommentary
+                                                                            .setText(
+                                                                                    "Are you ready to see the winner?");
+                                                                });
+                                                                pause7.play();
+                                                            });
+                                                            pause6.play();
+                                                        });
+                                                        pause5.play();
+                                                    });
+                                                    pause4.play();
+                                                });
+                                                pause3.play();
+                                            });
+                                            pause2.play();
+                                        });
+                                        pause1.play();
+                                    });
+                                    pause.play();
+                                } else if (cardCount == 3) {
+                                    PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
+                                    pause.setOnFinished(eventtt -> {
+                                        dealerCommentary.setText("Here's the turn!");
+                                        cards.add(deck.chooseCard());
+                                        updateCurrentPlayerInfo();
+                                        soundEffects("/cardflip.mp3");
+                                        PauseTransition pause2 = new PauseTransition(Duration.seconds(0.75));
+                                        pause2.setOnFinished(event2 -> {
+                                            dealerCommentary.setText("Here's the river!");
+                                            cards.add(deck.chooseCard());
+                                            updateCurrentPlayerInfo();
+                                            soundEffects("/cardflip.mp3");
+                                            revealWinner.setVisible(true);
+                                            dealerCommentary.setText("Are you ready to see the winner?");
+                                        });
+                                        pause2.play();
+                                    });
+                                    pause.play();
+                                } else if (cardCount == 4) {
+                                    PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
+                                    pause.setOnFinished(eventtt -> {
+                                        dealerCommentary.setText("Here's the river!");
+                                        cards.add(deck.chooseCard());
+                                        updateCurrentPlayerInfo();
+                                        soundEffects("/cardflip.mp3");
+                                        revealWinner.setVisible(true);
+                                        dealerCommentary.setText("Are you ready to see the winner?");
+                                    });
+                                    pause.play();
+                                }
+                            } else {
+                                if (game.getPlayers().size() > 1) {
+                                    dealerCommentary.setText("Are you ready to see the winner?");
+                                    revealWinner.setVisible(true);
+                                } else {
+                                    dealerCommentary.setText("There is only one player left.");
+                                }
+                            }
+                        });
+
+                    });
+                    pausee.play();
+                });
+                p.play();
+
+            }
+        });
+
     }
 
     // seats for each place
-    private VBox playerSeatBox(int i){
-       VBox seat = new VBox(4);
-       if (i < 3){
+    private VBox playerSeatBox(int i) {
+        VBox seat = new VBox(5);
+        if (i < 3) {
             seat.setAlignment(Pos.CENTER_LEFT);
-       } else {
-        seat.setAlignment(Pos.CENTER_RIGHT);
-       }
-       seat.setPadding(new Insets(8,10,8,10));
-       seat.setMinWidth(120);
-       seat.setMaxWidth(120);
-       updateSeatBox(seat, i);
-       return seat;
+        } else {
+            seat.setAlignment(Pos.CENTER_RIGHT);
+        }
+        seat.setPadding(new Insets(8, 10, 8, 10));
+        seat.setMinWidth(150);
+        seat.setMaxWidth(150);
+        updateSeatBox(seat, i);
+        return seat;
     }
 
-    private void updateSeatBox(VBox seat, int i){
+    private void updateSeatBox(VBox seat, int i) {
         seat.getChildren().clear();
-        java.util.List<Player> players = game.getOverallPlayers();
+        ArrayList<Player> players = game.getOverallPlayers();
 
-        if (i >= players.size()){
+        if (i >= players.size()) {
             seat.setStyle("-fx-background-color: #b15050; -fx-background-radius: 10;");
             Label emptySeat = new Label("Empty Seat");
-            if (i < 3){
+            if (i < 3) {
                 emptySeat.setAlignment(Pos.CENTER_LEFT);
             } else {
                 emptySeat.setAlignment(Pos.CENTER_RIGHT);
@@ -688,63 +1041,71 @@ public class PokerFX extends Application {
             seat.getChildren().add(emptySeat);
             return;
         }
-
         Player p = players.get(i);
         boolean isCurrentPlayer = p.equals(game.getCurrentPlayer());
         boolean isInGame = game.getPlayers().contains(p);
         String background;
         String border;
-        if (isInGame){
+        if (isInGame) {
             background = "#b0d6bd";
             border = "#3f855d";
-            if (isCurrentPlayer){
+            if (isCurrentPlayer) {
                 background = "#95bcef";
                 border = "#5458a9";
             }
-            seat.setStyle("-fx-background-color: " + background + "; -fx-background-radius: 10; -fx-border-color: " + border + "; -fx-border-width: 2;");
-        } 
+            seat.setStyle("-fx-background-color: " + background + "; -fx-background-radius: 10; -fx-border-color: "
+                    + border + "; -fx-border-width: 2;");
+        } else {
+            background = "#b0d6bd4b";
+            border = "#3f855d97";
+            seat.setStyle("-fx-background-color: " + background + "; -fx-background-radius: 10; -fx-border-color: "
+                    + border + "; -fx-border-width: 2;");
+        }
 
         Label playerNameAndChips;
-        if (isInGame){
+        if (isInGame) {
             playerNameAndChips = new Label(p.getName() + ": " + p.getChips() + " chips");
         } else {
             playerNameAndChips = new Label(p.getName() + ": folded");
         }
         playerNameAndChips.setStyle("-fx-text-fill: black; -fx-font-size: 11px; ");
+
+        seat.getChildren().add(playerNameAndChips);
         playerNameAndChips.setWrapText(true);
         playerNameAndChips.setAlignment(Pos.CENTER);
         playerNameAndChips.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        
+
         HBox cardBack = new HBox(3);
         cardBack.setAlignment(Pos.CENTER);
         ImageView cardBack1 = new ImageView("/cardBack.png");
         ImageView cardBack2 = new ImageView("/cardBack.png");
-        cardBack1.setFitHeight(40);
+        cardBack1.setFitHeight(80);
         cardBack1.setPreserveRatio(true);
-        cardBack2.setFitHeight(40);
+        cardBack2.setFitHeight(80);
         cardBack2.setPreserveRatio(true);
-        if (!isInGame){
+        if (!isInGame) {
             cardBack1.setOpacity(0.25);
             cardBack2.setOpacity(0.25);
         }
         cardBack.getChildren().addAll(cardBack1, cardBack2);
-        if (isCurrentPlayer){
+        if (isCurrentPlayer) {
             cardBox = cardBack;
         }
-        seat.getChildren().addAll(playerNameAndChips, cardBack);
+        seat.getChildren().add(cardBack);
     }
 
-    private void updateSeats(){
-        if (seatBoxes == null){
+    private void updateSeats() {
+        if (seatBoxes == null) {
             return;
-        } 
-        for (int i = 0; i < 6; i++){
+        }
+        for (int i = 0; i < 6; i++) {
             updateSeatBox(seatBoxes.get(i), i);
         }
     }
+
     // this is easier than 52 else if statements, just title the images as rank of
     // suit.png
-    public ImageView getCards(Card card) {
+    private ImageView getCards(Card card) {
         ImageView cards = new ImageView();
         String filename = "/" + String.valueOf(card.getRank()) + "Of" + card.getSuit().toString() + ".png";
         URL cardsURL = getClass().getResource(filename);
@@ -752,17 +1113,13 @@ public class PokerFX extends Application {
         return cards;
     }
 
-    public void loan() {
+    private void loan() {
         // identify broke people
         ArrayList<Player> brokePeople = new ArrayList<>();
         for (Player p : game.getPlayers()) {
-            if (p.getChips() == 0) {
+            if (p.getChips() <= 0) {//here
                 brokePeople.add(p);
             }
-        }
-        if (brokePeople.isEmpty()) {
-            // game.resetRound();
-            // return;
         }
         final int[] numDroppedOut = new int[] { 0 };
         // show loan shark for broke people
@@ -795,11 +1152,13 @@ public class PokerFX extends Application {
                 broke.addChips(1000);
                 broke.addLoan();
                 loanStage.close();
+                soundEffects("/acceptloan.mp3");
             });
             denyButton.setOnAction(e -> {
                 game.setInactive(broke);
                 numDroppedOut[0]++;
                 loanStage.close();
+                soundEffects("/wearedonegambling.mp3");
             });
             HBox buttons = new HBox(14, confirmButton, denyButton);
             buttons.setAlignment(Pos.CENTER);
@@ -811,18 +1170,18 @@ public class PokerFX extends Application {
             loanStage.showAndWait();
         }
         if (game.getPlayersReference().size() <= 1) {
-            System.out.println("reached");
             dealerCommentary.setText("Not enough players to continue. Thanks for playing!");
             endGame();
             return;
         } else {
             game.resetRound();
+            tempChips = 0;
             dealerCommentary.setText("Starting new round!");
             pokerTable();
         }
     }
 
-    public boolean canAct() {
+    private boolean canAct() {
         if (game.getPlayers().size() <= 1)
             return false;
         if (game.getRoundCount() >= 4)
@@ -832,7 +1191,6 @@ public class PokerFX extends Application {
 
     private void updateActionState() {
         if (game.getPlayers().size() <= 1) {
-            showWinnerScreen();
             return;
         }
         callorcheckButton.setDisable(false);
@@ -841,18 +1199,27 @@ public class PokerFX extends Application {
     }
 
     private void showWinnerScreen() {
-        rootPane.getChildren().clear();
-
-        VBox endScreen = new VBox(15);
-        endScreen.setAlignment(Pos.CENTER);
-        endScreen.setStyle("-fx-background-color:transparent; -fx-padding: 20; -fx-font-size: 18px;");
         winnerLabel = new Label();
         ArrayList<Player> winners = game.findWinner();
+        for (Player p: winners){
+            String name = p.getName();
+            int wins = playerWins.get(name);
+            playerWins.put(name, wins+1);
+        }
         int[] added = game.splitWinnings();
         String hand = game.handType(winners.get(0));
+        middleBox.setTranslateY(15);
+        if (added[0] > 1000) {
+            soundEffects("/winner.mp3");
+        }
+        soundEffects("/icantstopwinning.mp3");
         if (winners.size() == 1) {
-            winnerLabel.setText(winners.get(0).getName() +
-                    " won " + game.getPot() + " chips with a " + hand);
+            if (game.getPlayers().size() == 1) {
+                winnerLabel.setText(winners.get(0).getName() + " won " + game.getPot()
+                        + " chips as the only player left");
+            } else
+                winnerLabel.setText(winners.get(0).getName() +
+                        " won " + game.getPot() + " chips with a " + hand);
         } else {
             boolean diff = false;
             for (int i = 0; i < added.length - 1; i++) {
@@ -879,35 +1246,76 @@ public class PokerFX extends Application {
                     text += ("\n" + winners.get(i).getName() + " won " + added[i] + " chips");
                 }
                 winnerLabel.setText(text);
+                middleBox.setTranslateY(25);
+                winnerLabel.setTranslateY(-15);
             }
         }
+        stack1.setVisible(false);
+        stack10.setVisible(false);
+        stack100.setVisible(false);
+        stack1000.setVisible(false);
+        stack1.setManaged(false);
+        stack10.setManaged(false);
+        stack100.setManaged(false);
+        stack1000.setManaged(false);
+        potLabel.setText(game.getPot() + " chips distributed");
+        potLabel.setWrapText(true);
+        potLabel.setMaxWidth(120);
+        potLabel.setTextAlignment(TextAlignment.CENTER);
+        for (Player p : winners) {
+            VBox seat = seatBoxes.get(game.getOverallPlayers().indexOf(p));
+            String background = "#f1e652";
+            String border = "#6b5916";
+            seat.setStyle("-fx-background-color: " + background + "; -fx-background-radius: 10; -fx-border-color: "
+                    + border + "; -fx-border-width: 3;");
+
+            Label playerNameAndChips = new Label(
+                    game.getOverallPlayers().get(game.getOverallPlayers().indexOf(p)).getName()
+                            + ": " + game.getOverallPlayers().get(game.getOverallPlayers().indexOf(p)).getChips()
+                            + " chips");
+            playerNameAndChips.setStyle("-fx-text-fill: black; -fx-font-size: 11px; ");
+            seat.getChildren().set(0, playerNameAndChips);
+        }
         winnerLabel.setText(winnerLabel.getText() + "\n");
-        winnerLabel.setStyle("-fx-text-fill: white;");
-        dealerCommentary.setText("Wanna play another round?");
-        dealerCommentary.setStyle("-fx-text-fill: white;");
-        dealerCommentary.setMaxWidth(WINDOW_WIDTH * 0.6);
+        winnerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
+        winnerLabel.setTextAlignment(TextAlignment.CENTER);
+        winnerLabel.setTranslateY(-60);
+        dealerCommentary.setText("Here are the results!");
+        Label anotherRoundLabel = new Label("Wanna play another round?");
+        anotherRoundLabel.setStyle("-fx-text-fill: white; -fx-font-size: 20px;");
+        anotherRoundLabel.setMaxWidth(WINDOW_WIDTH * 0.6);
+
         HBox buttonBox = new HBox(10);
         Button restart = new Button("yes!");
         Button no = new Button("no :(");
+        restart.setStyle("-fx-background-color: #edf793; -fx-font-size: 14px; -fx-text-fill: black;");
+        no.setStyle("-fx-background-color: #edf793; -fx-font-size: 14px; -fx-text-fill: black;");
+
         buttonBox.getChildren().addAll(restart, no);
         buttonBox.setAlignment(Pos.CENTER);
+        VBox anotherRound = new VBox(10, anotherRoundLabel, buttonBox);
+        anotherRoundLabel.setAlignment(Pos.CENTER);
+        anotherRoundLabel.setTextAlignment(TextAlignment.CENTER);
+        javafx.scene.layout.BorderPane table = new javafx.scene.layout.BorderPane();
+        table.setStyle("-fx-background-color:transparent;");
+        anotherRound.setAlignment(Pos.BOTTOM_CENTER);
+        anotherRound.setTranslateY(-60);
         restart.setOnAction(e -> {
-            // loans();
+            soundEffects("/todayslessonkeepgambling.mp3");
             loan();
-            // game.resetRound();
-
         });
         no.setOnAction(e -> {
+            soundEffects("/letsbefinanciallyresponsible.mp3");
             endGame();
         });
-        endScreen.getChildren().addAll(winnerLabel, dealerCommentary, buttonBox);
-        rootPane.getChildren().add(endScreen);
+        if (game.getPlayers().size() > 1) {
+            revealWinner.setVisible(false);
+        }
+        rootPane.getChildren().addAll(winnerLabel, anotherRound);
         winnershown = false;
-        // Stage stage = (Stage) callorcheckButton.getScene().getWindow();
-        // stage.getScene().setRoot(rootPane);
     }
 
-    public void endGame() {
+    private void endGame() {
         rootPane.getChildren().clear();
         if (!dealerCommentary.getText().contains("Not enough players")) {
             dealerCommentary.setText("Thanks for playing!\n"); // if we ended game bc not enough players, don't change
@@ -922,15 +1330,34 @@ public class PokerFX extends Application {
                 loanPlayers.add(p.getName());
             }
         }
-        Label loanLabel = new Label();
-        if (loanPlayers.size() == 1){
-            loanLabel.setText(loanPlayers.get(0) + " owes Shark. Shark has his eyes on you...");
-        } else if (loanPlayers.size() == 2){
-            loanLabel.setText(loanPlayers.get(0) + " and " + loanPlayers.get(1) + " owes Shark. Shark has his eyes on you...");
+        ArrayList<String> sortedWins = new ArrayList<>();
+
+        for (Player p: game.getOverallPlayers()) {
+            sortedWins.add(p.getName());
+        } // is this insertion sort ... i lowk forgot all the sorting stuff
+        for (int i = 1; i < sortedWins.size(); i++){
+            String wins = sortedWins.get(i);
+            int j = i - 1;
+            while (j >= 0 && playerWins.get(sortedWins.get(j)) < playerWins.get(wins)){
+                sortedWins.set(j+1, sortedWins.get(j));
+                j--;
+            }
+            sortedWins.set(j+1, wins);
         }
-        else if (loanPlayers.size() > 2){
+        for (String s: sortedWins){
+            if (playerWins.get(s)>0){
+                playerStats.setText(playerStats.getText() + s + " won " + playerWins.get(s) + " rounds\n");
+            }
+        }
+        Label loanLabel = new Label();
+        if (loanPlayers.size() == 1) {
+            loanLabel.setText(loanPlayers.get(0) + " owes Shark. Shark has his eyes on you...");
+        } else if (loanPlayers.size() == 2) {
+            loanLabel.setText(
+                    loanPlayers.get(0) + " and " + loanPlayers.get(1) + " owes Shark. Shark has his eyes on you...");
+        } else if (loanPlayers.size() > 2) {
             String text = "";
-            for (int i = 0; i < loanPlayers.size() - 1; i++){
+            for (int i = 0; i < loanPlayers.size() - 1; i++) {
                 text += loanPlayers.get(i) + ", ";
             }
             text += "and " + loanPlayers.get(loanPlayers.size() - 1) + " owes Shark. Shark has his eyes on you...";
@@ -968,11 +1395,9 @@ public class PokerFX extends Application {
         dealerCommentary.setAlignment(Pos.CENTER);
         dealerCommentary.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         dealerCommentary.translateYProperty().setValue((WINDOW_HEIGHT - dealerImage.getImage().getHeight()) / 2 - 50);
-        
 
         StackPane speechBubble = new StackPane(bubble, dealerCommentary);
         speechBubble.setStyle("-fx-background-color: transparent;");
-        // speechBubble.getChildren().addAll(bubble, dealerCommentary);
         speechBubble.setAlignment(Pos.TOP_CENTER);
         speechBubble.translateYProperty().setValue((WINDOW_HEIGHT - dealerImage.getImage().getHeight()) / 2);
         speechBubble.setTranslateY(speechBubble.getTranslateY() - 10);
@@ -983,7 +1408,7 @@ public class PokerFX extends Application {
         topCommentary.getChildren().addAll(dealerImage, speechBubble);
         VBox wholeBox = new VBox(20);
         wholeBox.getChildren().add(playerStats);
-        if (loanPlayers.size() > 0){
+        if (loanPlayers.size() > 0) {
             wholeBox.getChildren().add(loanLabel);
         }
         wholeBox.getChildren().add(credits);
@@ -991,12 +1416,11 @@ public class PokerFX extends Application {
         rootPane.getChildren().addAll(topCommentary, wholeBox);
     }
 
-    public void credits(){
+    private void credits() {
         rootPane.getChildren().clear();
         rootPane.setStyle("-fx-background-color: black;");
         VBox text = new VBox(10);
         text.setAlignment(Pos.CENTER);
-
 
         Label thanks = new Label("THANK YOU FOR SUPPORTING SHARK'S BUSINESS!");
         thanks.setStyle("-fx-text-fill: #ffce2c; -fx-font: 30px 'Courier New'; ");
@@ -1009,7 +1433,7 @@ public class PokerFX extends Application {
 
         Label music = new Label("Music");
         music.setStyle("-fx-text-fill: #ffce2c; -fx-font: 13px 'Courier New'; ");
-        
+
         Label song1 = new Label("just business, darling. by is it sunday?");
         Label song2 = new Label("Casino music for your gambling session || Playlist by SaraCrossing");
         Label song3 = new Label("jazz... but it's SHRIMP by me time.");
@@ -1018,6 +1442,14 @@ public class PokerFX extends Application {
         song2.setStyle("-fx-text-fill: #fcf2d2; -fx-font: 18px 'Courier New'; ");
         song3.setStyle("-fx-text-fill: #fcf2d2; -fx-font: 18px 'Courier New'; ");
         song4.setStyle("-fx-text-fill: #fcf2d2; -fx-font: 18px 'Courier New'; ");
+
+        Label soundEffects = new Label("Sound effects");
+        soundEffects.setStyle("-fx-text-fill: #ffce2c; -fx-font: 13px 'Courier New'; ");
+
+        Label gambleCore = new Label("gamblecore by raxdflipnote");
+        Label igotthis = new Label("I Got This Sound Effect from The Amazing World of Gumball ");
+        gambleCore.setStyle("-fx-text-fill: #fcf2d2; -fx-font: 18px 'Courier New'; ");
+        igotthis.setStyle("-fx-text-fill: #fcf2d2; -fx-font: 18px 'Courier New'; ");
 
         ImageView sharksGoodbye = new ImageView();
         URL goodbyeUrl = getClass().getResource("/sharksGoodbye.png");
@@ -1029,52 +1461,12 @@ public class PokerFX extends Application {
         sharksFace.setFitHeight(100);
         sharksFace.setPreserveRatio(true);
 
-        text.getChildren().addAll(thanks, creators, names, music, song1, song2, song3, song4, sharksGoodbye, sharksFace);
+        text.getChildren().addAll(thanks, creators, names, music, song1, song2, song3, song4,
+                soundEffects, igotthis, gambleCore, sharksGoodbye, sharksFace);
         rootPane.getChildren().add(text);
-        }
+    }
 
     public static void main(String[] args) {
         launch(args);
-    }
-
-    private StackPane createBackground() {
-        StackPane rootPane = new StackPane();
-        BackgroundFill backColor = new BackgroundFill(
-                Color.web("#1a3a1a"),
-                CornerRadii.EMPTY,
-                Insets.EMPTY);
-        rootPane.setBackground(new Background(backColor));
-
-        URL bgUrl = getClass().getResource("/pokerbackground1.png");
-        Image bgImage = new Image(bgUrl.toExternalForm());
-        BackgroundImage backgroundImage = new BackgroundImage(
-                bgImage,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundPosition.CENTER,
-                new BackgroundSize(100, 100, true, true, false, true));
-        rootPane.setBackground(
-                new Background(new BackgroundFill[] { backColor }, new BackgroundImage[] { backgroundImage }));
-        return rootPane;
-    }
-
-    private void lockWindowRatio(Stage stage) {
-        final boolean[] resizing = { false };
-
-        stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            if (resizing[0] || !stage.isShowing())
-                return;
-            resizing[0] = true;
-            stage.setHeight(newWidth.doubleValue() / WINDOW_RATIO);
-            resizing[0] = false;
-        });
-
-        stage.heightProperty().addListener((obs, oldHeight, newHeight) -> {
-            if (resizing[0] || !stage.isShowing())
-                return;
-            resizing[0] = true;
-            stage.setWidth(newHeight.doubleValue() * WINDOW_RATIO);
-            resizing[0] = false;
-        });
     }
 }
