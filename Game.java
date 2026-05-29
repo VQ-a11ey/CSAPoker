@@ -1,6 +1,12 @@
 package com.example;
 import java.util.*;
-
+/**
+ * @authors Anna Chen, Sophia Fan, Vicky Qin
+ * @date 5.27.2026
+ * The Game class represents a game of poker. 
+ * it inlcudes the deck, players, pot, blinds, cards on the table, and the flow of the game. 
+ * it has methods for resetting the round, dealing cards, handling player actions (fold, raise, check, call), determining the next player and next round, finding the winner(s), and calculating winnings. The class also keeps track of the current state of the game, including the current player, current bet, and round count.
+ */
 public class Game {
     private Deck deck;
     private ArrayList<Player> players;
@@ -17,6 +23,10 @@ public class Game {
     private Player lastRaiser;
     private int dealer;
 
+    /**
+     * Constructor for Game class. Initializes the game with a list of player names, creates a deck, and deals cards to each player.
+     * @param playerNames
+     */
     public Game(ArrayList<String> playerNames) {
         if (playerNames.size() < 2){
             throw new IllegalArgumentException("Poker needs at least 2 players.");
@@ -42,6 +52,9 @@ public class Game {
         dealCards();
     }
 
+    /**
+     * Resets the game for a new round. Increments the dealer, creates a new deck, clears the middle cards and pot, resets the round count, and deals new cards to each player. Also resets each player's bet to 0.
+     */
     public void resetRound(){
         players = new ArrayList<>(playersReference);
         dealer++;
@@ -57,6 +70,7 @@ public class Game {
         }
         dealCards();
     }
+
     public int[] getBlindIndices(){
         int small = (dealer + 1) % players.size();
         int big = (dealer + 2) % players.size();
@@ -75,23 +89,37 @@ public class Game {
         currentPlayer = firstPlayer;
         lastRaiser = players.get(firstPlayer);
     }
-    public void dealCards() {
+/**
+ * Deals two cards to each player in p
+ */
+    private void dealCards() {
         for (Player p : players) {
             p.setCardOne(deck.chooseCard());
             p.setCardTwo(deck.chooseCard());
         }
     }
-
+/**
+ * @return integer small Blind
+ */
     public int getSmallBlind(){
         return smallBlind;
     }
+/**
+ * @return integer big Blind
+ */
     public int getBigBlind(){
         return bigBlind;   
     }
+/**
+ * @param i
+ * adds i to the pot
+ */
     public void addToPot(int i) {
         pot += i;
     }
-
+/**
+ * @return pot
+ */
     public int getPot() {
         return pot;
     }
@@ -100,7 +128,10 @@ public class Game {
         Player p = players.get(currentPlayer);
         return Math.max(0, current - p.getBet());
     }
-
+/**
+ * determines if player can check (did not go all in and can pay)
+ * @return
+ */
     public boolean canCheck(){
         return !players.get(currentPlayer).isAllIn() && getAmountToCall() == 0;
     }
@@ -115,8 +146,9 @@ public class Game {
     }
 
     public void fold(){
-        Player p = players.get(currentPlayer);
+        Player p = players.get((currentPlayer + 1) % players.size());
         boolean end = (p == lastRaiser);
+        
         players.remove(currentPlayer);
         
         if (currentPlayer < firstPlayer) {
@@ -125,13 +157,16 @@ public class Game {
                 firstPlayer += players.size();
             }
         }
+        else if (currentPlayer == firstPlayer){
+            if (firstPlayer >= players.size()){
+                firstPlayer = 0;
+            }
+        }
         if (currentPlayer >= players.size()) {
             currentPlayer = 0;
         }
         if (players.size() == 1){
-            roundCount = 3;
-            //players.get(0).addChips(pot);
-            //pot = 0;
+            roundCount = 4;
             return;
         }
         else if (end){
@@ -166,9 +201,6 @@ public class Game {
 
     public void call(){
         Player p = players.get(currentPlayer);
-        if (!canCall()){
-            //return MoveResult.INVALID_CALL;
-        }
         int[] updateTo = p.bet(getAmountToCall());
         addToPot(updateTo[1]);
         nextPlayer();
@@ -183,6 +215,17 @@ public class Game {
             if (players.get(currentPlayer) == lastRaiser){
                 nextRound();
                 return;
+            }
+            if (!players.contains(lastRaiser)){
+                int i = overallPlayers.indexOf(lastRaiser);
+                while (!players.contains(overallPlayers.get(i))){
+                    i++;
+                    if (i >= overallPlayers.size()){
+                        i = 0;
+                    }
+                }
+                lastRaiser = overallPlayers.get(i);
+
             }
         } while (players.get(currentPlayer).isAllIn());
     }
@@ -202,9 +245,6 @@ public class Game {
             }
         }
         if (playersWhoCanAct <= 1){
-            while (cards.size() < 5){
-                cards.add(deck.chooseCard());
-            }
             roundCount = 4;
             return;
         }
@@ -229,24 +269,15 @@ public class Game {
         } else if (roundCount == 3) {
             cards.add(deck.chooseCard());
         } else if (roundCount == 4){
-            /*
-            ArrayList<Player> winners = findWinner();
-            if (winners.size() > 0){
-                int winnings = pot / winners.size();
-                int leftover = pot % winners.size();
-                winners.get(0).addChips(leftover);
-                for (Player p : winners){
-                    p.addChips(winnings);
-                }
-            }
-            pot = 0;
-            */
             return;
         } 
         lastRaiser = players.get(firstPlayer);
         return;
     }
-
+/**
+ * if multiple players win, the winnings (pot chips) are split up as evenly as possible 
+ * @return 
+ */
     public int[] splitWinnings(){
         ArrayList<Player> winners = findWinner();
         int[] added = new int[winners.size()];
@@ -255,7 +286,7 @@ public class Game {
             int leftover = pot % winners.size();
             int index = (dealer + 1) % playersReference.size();
             while (leftover > 0){
-                int temp = players.indexOf(playersReference.get(index));
+                int temp = winners.indexOf(playersReference.get(index));
                 if (temp != -1){
                     added[temp] ++;
                     leftover--;
@@ -271,18 +302,32 @@ public class Game {
         }
         return added;
     }
+/**
+ * finds the winner(s) of the hand by calculating the points of each player's hand and comparing them. If there are multiple players with the same highest points, they are all considered winners.
+ * @return an ArrayList of the winning player(s)
+ */
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
-        int maxPoints = -1;
+        winners.add(players.get(0));
+        int[] rank = new Points(players.get(0).getCardOne(), players.get(0).getCardTwo(), cards).calculatePoints();
         for (Player p : players) {
-            PlayerPoints points = new PlayerPoints(p.getCardOne(), p.getCardTwo(), cards);
-            int playerPoint = 0;
-            playerPoint = points.calculatePoints();
-            if (playerPoint > maxPoints) {
-                maxPoints = playerPoint;
+            Points pointSystem = new Points(p.getCardOne(), p.getCardTwo(), cards);
+            int compare = 0;
+            int[] points = pointSystem.calculatePoints();
+            for (int i = 0; i < points.length; i++){
+                if (points[i]> rank[i]){
+                    compare = 1;
+                    break;
+                } else if (points[i] < rank[i]){
+                    compare = -1;
+                    break;
+                }
+            }
+            if (compare == 1){
                 winners.clear();
                 winners.add(p);
-            } else if (playerPoint == maxPoints) {
+                rank = points;
+            } else if (compare == 0 && p != winners.get(0)){
                 winners.add(p);
             }
         }
@@ -290,33 +335,34 @@ public class Game {
     }
 
     public String handType(Player winner) {
-        PlayerPoints pointSystem = new PlayerPoints(winner.getCardOne(), winner.getCardTwo(), cards);
-        int points = pointSystem.calculatePoints();
-        if (points == 2025) {
+        Points pointSystem = new Points(winner.getCardOne(), winner.getCardTwo(), cards);
+        int[] points = pointSystem.calculatePoints();
+        int rank = points[0];
+        if (rank == 9) {
             return "Royal Flush";
         }
-        if (points >= 1800) {
+        if (rank == 8) {
             return "Straight Flush";
         }
-        if (points >= 1575) {
+        if (rank == 7) {
             return "Four of a Kind";
         }
-        if (points >= 1350) {
+        if (rank == 6) {
             return "Full House";
         }
-        if (points >= 1125) {
+        if (rank == 5) {
             return "Flush";
         }
-        if (points >= 900) {
+        if (rank == 4) {
             return "Straight";
         }
-        if (points >= 675) {
+        if (rank == 3) {
             return "Three of a Kind";
         }
-        if (points >= 450) {
+        if (rank == 2) {
             return "Two Pair";
         }
-        if (points >= 225) {
+        if (rank == 1) {
             return "Pair";
         } else {
             return "High Card";
@@ -328,8 +374,14 @@ public class Game {
     public Player getCurrentPlayer(){
         return players.get(currentPlayer);
     }
+    public int getCurrentIndex(){
+        return currentPlayer;
+    }
     public ArrayList<Card> getMiddleCards(){
         return cards;
+    }
+    public Deck getDeck(){
+        return deck;
     }
     public int getCurrent(){
         return current;
@@ -349,7 +401,7 @@ public class Game {
     public void setInactive(Player p){
         int index = playersReference.indexOf(p);
         playersReference.remove(p);
-        if (index < dealer){
+        if (index <= dealer){
             dealer--;
             if (dealer < 0){
                 dealer += playersReference.size();
