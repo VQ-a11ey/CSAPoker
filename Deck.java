@@ -3,7 +3,6 @@ import java.util.ArrayList;
 
 /**
  * @author Anna Chen
- * @date 5/27/2026
  */
 public class Deck {
     private ArrayList<Card> cards;
