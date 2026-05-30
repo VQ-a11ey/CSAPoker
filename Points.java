@@ -26,9 +26,12 @@ public class Points extends Player{
     /**
      * constructor for player points, takes in the two cards from the players and the 
      * cards in the middle and puts it in an arrayList of cards used to calculate player points
-     * @param one first card of player hand
-     * @param two second card of player hand
-     * @param cards middle cards on the table
+     * sets boolean has<pattern> to false for all patterns for calculating points later
+     * makes empty arraylist pattern
+     * and makes a sixthings array to store the integer ranks of determinant of the ranks for the hand for comparison
+     * @param one
+     * @param two
+     * @param cards
      */
 
     public Points(Card one, Card two , ArrayList<Card> cards){
@@ -78,6 +81,7 @@ public class Points extends Player{
 /**
  * checks if player has a pair and returns the rank of pair, -1 if no pair 
  * sets hasPair to true for later methods to use for calculating points
+ * adds pair rank to pattern for calculating points in case of tie breakers if has pair 
  * @return rank of pair if there is a pair, -1 if there is no pair
  */
     public int hasPair(){
@@ -98,6 +102,7 @@ public class Points extends Player{
 /**
  * checks if player has a twoPair pattern
  * sets hasTwoPair to true for calculating points later
+ * adds the ranks of the two pairs to pattern for calculating points if has two pair
  * @return an array of the ranks of the two pairs, with the first element
  * being the higher pair, and the second element being the lower pair, if there is no pair, it returns an array of -1, -1
  */
@@ -123,6 +128,7 @@ public class Points extends Player{
 /**
  * checks if player has three of a kind pattern
  * sets hasThreeOfAKind to true for calculating points later
+ * adds the rank of the three of a kind to pattern for calculating points if has three of a kind
  * @return rank of three of a kind if there is one, -1 if there is no three of a kind
  */
     public int threeOfAKind(){
@@ -143,6 +149,7 @@ public class Points extends Player{
 /**
  * checks if player has four of a kind pattern
  * sets hasFourOfAKind to true for calculating points later
+ * adds the rank of the four of a kind to pattern for calculating points if has four of a kind
  * @return rank of four of a kind if there is one, -1 if there is no four of a kind
  */
     public int hasFourOfAKind(){
@@ -161,6 +168,7 @@ public class Points extends Player{
 /**
  * checks if player has straight pattern 
  * sets hasStraight to true for calculating points later
+ * adds the ranks of the straight to pattern for calculating points if has straight
  * @return an arrayList of the ranks of the straights in the player's hand, if there are no straights, it returns an empty arrayList
  * the returned arrayList is used to calculate points since the last element is the highest straight
  * and it is also used in hasStraightFlush to check if any of the straights is a flush 
@@ -209,6 +217,7 @@ public class Points extends Player{
     }
 /**
  * sets hasFlush to true for calculating points later
+ * adds the ranks of the flush to pattern for calculating points if has flush
  * @param rayy , an array list of cards to check for flush
  * @return rank of the highest card in the flush, if there is no flush, it returns -1
  */
@@ -272,8 +281,9 @@ public class Points extends Player{
 /**
  * checks if player has a full house pattern
  * sets hasFullHouse to true for calculating points later
- * @return an array of 2 integers, first is the rank of the three of a kind, second is the rank of the pair. If there is no full house, it returns [-1, -1]
- * the returned int array is used to determine strength of the full house pattern 
+ * adds the rank of the three of a kind and the rank of the pair to pattern for calculating points if has full house
+ * @return a number that is the rank of the three of a kind times 15 squared plus the rank of the pair times 15, if there is no full house, it returns -1
+ * the returned number is used to calculate points 
  */
     public int[] hasFullHouse(){
         int three = -1;
@@ -301,6 +311,7 @@ public class Points extends Player{
 /**
  * checks if player has a straight flush pattern
  * sets hasStraightFlush to true for calculating points later
+ * adds the ranks of the straight flush to pattern for calculating points if has straight flush
  * @return rank of the highest card in the straight flush, if there is no straight flush, it returns -1
  */
     public int hasStraightFlush(){
@@ -430,8 +441,16 @@ public class Points extends Player{
     }
 
 /**
- * calculates the strength player's hand based on the patterns and the ranks (for tie-breaking) of the cards in the hand
- * @return an array of 6 integers, the first integer is the strength of the hand based on the pattern (0 for high card up to 9 for royal flush), next five integers are used to break ties between players with the same pattern strength (based on card ranks of the pattern and the remaining cards in the hand)
+ * checks pattern from highest to lowest and returns an array of six integers, 
+ * the first integer is the rank of the hand, for example, royal flush is 9, straight flush is 8, four of a kind is 7, etc
+ * the rest of the inttegers are the determinants of the hand, 
+ * E.g. for two pairs
+ * 2nd spot: highest pair rank
+ * 3rd spot: second highest pair rank
+ * 4th spot: highest rank not in pattern
+ * 5th spot: second highest rank not in pattern
+ * 6th spot: third highest rank not in pattern
+ * @return calculated player point based on the ir hand 
  */
     public int[] calculatePoints(){
         pattern.clear();
