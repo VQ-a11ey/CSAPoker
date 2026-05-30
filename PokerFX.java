@@ -81,6 +81,7 @@ public class PokerFX extends Application {
     private Button revealWinner;
     private HBox middleBox;
     private int tempChips = 0;
+    private boolean winnershown = false;
     private HashMap<String, Integer> playerWins = new HashMap<>();
 
     private static String[][] musicSelection = {
@@ -818,12 +819,6 @@ public class PokerFX extends Application {
         }
     }
 
-    //
-    // later just stuff all update() methods into here and just call this every time
-    // instead of all the stuff individually
-    //
-    private boolean winnershown = false;
-
     /** 
      * Refreshes the UI by updating the current player info, action state, buttons, and seats. Also handles the end of round animations (card reveals, player card showdown), and revealing the winner at the end of the game.
     */
@@ -1275,9 +1270,12 @@ public class PokerFX extends Application {
             playerWins.put(name, wins+1);
         }
         int[] added = game.splitWinnings();
-        String hand = "";
-        if (game.getPlayers().size() > 1) {
+        String hand;
+        if (game.getPlayers().size() > 1){
             hand = game.handType(winners.get(0));
+        } 
+        else{
+            hand = "N/A"; // everyone else folded, so winner wins by default with no hand
         }
         middleBox.setTranslateY(15);
         if (added[0] > 1000) {
