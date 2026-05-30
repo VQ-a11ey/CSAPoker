@@ -1,7 +1,6 @@
 package com.example;
 /**
  * @author Vicky Qin
- * @date 5/27/2026
  * The Card class represents a card in the poker game. It contains information about the card's rank and suit, and implements the Comparable interface to allow for comparison between cards based on their rank.
  */
 public class Card implements Comparable<Object> {
