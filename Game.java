@@ -355,16 +355,17 @@ public class Game {
         return added;
     }
     /**
-     * Finds the winner(s) of the hand by calculating the points of each player's hand and comparing them. If there are multiple players with the same highest points, they are all considered winners.
+     * finds the winner(s) of the hand by comparing the rank of each player's hand using the points class. 
+     * It compares players hand down the Array that points returns and if theres a player with a higher rank, it clears winners arraylist and adds the new highest rank array
+     * if there is a tie, it adds the player to the winners arraylist without clearing it.
      * @return an ArrayList of the winning player(s)
      */
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
-        if (players.size() == 1) {
-            winners.add(players.get(0));
+        winners.add(players.get(0));
+        if (players.size() == 1){
             return winners;
         }
-        winners.add(players.get(0));
         int[] rank = new Points(players.get(0).getCardOne(), players.get(0).getCardTwo(), cards).calculatePoints();
         for (Player p : players) {
             Points pointSystem = new Points(p.getCardOne(), p.getCardTwo(), cards);
@@ -391,9 +392,9 @@ public class Game {
     }
 
     /**
-     * Determines the type of hand the winning player has based on their points from PlayerPoints
+     * Returns hand type of the player winner by using the Points class array's first term
      * @param winner the winning player whose hand type is being determined
-     * @return the player's best hand type as a String (e.g. "Full House")
+     * @return a string representing the pattern of winners hand
      */
     public String handType(Player winner) {
         Points pointSystem = new Points(winner.getCardOne(), winner.getCardTwo(), cards);
