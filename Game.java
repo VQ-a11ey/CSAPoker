@@ -4,7 +4,6 @@ import java.util.*;
  * @author Anna Chen
  * @author Sophia Fan
  * @author Vicky Qin
- * @date 5/27/2026
  * The Game class implements the logic for a game of poker. 
  * it inlcudes the deck, players, pot, blinds, cards on the table, and the flow of the game. 
  * it has methods for resetting the round, dealing cards, handling player actions (fold, raise, check, call), determining the next player and next round, finding the winner(s), and calculating winnings. The class also keeps track of the current state of the game, including the current player, current bet, and round count.
