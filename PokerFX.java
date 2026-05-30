@@ -1275,7 +1275,10 @@ public class PokerFX extends Application {
             playerWins.put(name, wins+1);
         }
         int[] added = game.splitWinnings();
-        String hand = game.handType(winners.get(0));
+        String hand = "";
+        if (game.getPlayers().size() > 1) {
+            hand = game.handType(winners.get(0));
+        }
         middleBox.setTranslateY(15);
         if (added[0] > 1000) {
             soundEffects("/winner.mp3");
