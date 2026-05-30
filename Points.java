@@ -209,7 +209,7 @@ public class Points extends Player{
            pattern.add(highest);
        pattern.add(highest-1);
        pattern.add(highest-2);
-       pattern.add(highest - 2);
+       pattern.add(highest - 3);
        pattern.add(highest- 4);
        }
        
