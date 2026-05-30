@@ -360,6 +360,10 @@ public class Game {
      */
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
+        if (players.size() == 1) {
+            winners.add(players.get(0));
+            return winners;
+        }
         winners.add(players.get(0));
         int[] rank = new Points(players.get(0).getCardOne(), players.get(0).getCardTwo(), cards).calculatePoints();
         for (Player p : players) {
