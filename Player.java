@@ -1,7 +1,6 @@
 package com.example;
 /**
  * @author Sophia Fan
- * @date 5/27/2026
  * The Player class represents a player in the poker game.
  * It contains information about the player's name, chip count, and cards.
  */
@@ -70,13 +69,6 @@ public class Player {
     public int getLoans(){
         return loans;
     }
-    /**
-     * checks if the player is all in (has no chips left)
-     * @return true if the player is all in, false otherwise
-     */
-    public boolean isAllIn() {
-        return chips == 0;
-    }
 
     /**
      * sets the player's first card
@@ -103,19 +95,28 @@ public class Player {
     }
 
     /**
+     * sets the player's bet to a specific amount
+     * @param bet the amount to set as the player's bet
+     */
+    public void setBet(int bet){
+        this.bet = bet;
+    }
+
+    /**
+     * checks if the player is all in (has no chips left)
+     * @return true if the player is all in, false otherwise
+     */
+    public boolean isAllIn() {
+        return chips == 0;
+    }
+
+    /**
      * adds chips to the player's chip count
      * @param added the number of chips to add to the player's chip count
      */
 
     public void addChips(int added) {
         chips += added;
-    }
-    /**
-     * sets the player's bet to a specific amount
-     * @param bet the amount to set as the player's bet
-     */
-    public void setBet(int bet){
-        this.bet = bet;
     }
     
     /**
