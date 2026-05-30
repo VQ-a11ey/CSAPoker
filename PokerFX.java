@@ -34,18 +34,19 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
- * @author Anna Chen
- * @author Sophia Fan
- * @author Vicky Qin
+ * @author Vicky Qin, Anna Chen, Sophia Fan
  * @date 5/27/2026
  * The main class of the application. Runs the GUI and visuals. Buttons, sliders, and other controls allow the player(s) to progress through the game.
  */
 public class PokerFX extends Application {
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     private static final double WINDOW_WIDTH = 900;
     private static final double WINDOW_HEIGHT = 600;
 
-    
     private Game game;
     private Label playerStats;
     private Label currentPlayer;
@@ -80,20 +81,18 @@ public class PokerFX extends Application {
     private Button flipb;
     private Button revealWinner;
     private HBox middleBox;
-    private int tempChips = 0;
-    private boolean winnershown = false;
+    private int tempChips = 0;  
     private HashMap<String, Integer> playerWins = new HashMap<>();
-
+    private Player lastActed;
     private static String[][] musicSelection = {
             { "Relaxing Jazz", "/relaxingJazz.mp3" }, { "Less Relaxing Jazz", "/lessRelaxingJazz.mp3" },
             { "Lesser Relaxing Jazz", "/lesserRelaxingJazz.mp3" }, { "shrimp's Jazz", "/shrimpsJazz.mp3" },
     };
     private int selectedJazz = 0;
-
-    /**
-     * Plays Beautiful Jazz Music (in a loop) based on the index of the track
-     * @param track index of the track to play from the musicSelection array.
-     */
+/**
+ * Plays Beautiful Jazz Music (in a loop) based on the index of the track
+ * @param track index of the track to play from the musicSelection array.
+ */
     private void playBeautifulJazzMusic(int track) {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
@@ -126,9 +125,9 @@ public class PokerFX extends Application {
     }
 
     /**
-     * Starts the Game. Creates the starting stage asking for music selection, number of players, and player names.
-     * @param stage the stage to set the scene on
-     */
+ * Starts the Game. Creates the starting stage asking for music selection, number of players, and player names.
+ * @param stage the stage to set the scene on
+ */
     @Override
     public void start(Stage stage) {
         // for background
@@ -252,7 +251,7 @@ public class PokerFX extends Application {
         });
         chip1 = new ImageView("/1chip.png");
         chip10 = new ImageView("/10chip.png");
-        chip100 = new ImageView("/100chip.png");
+        chip100 = new ImageView("/100chip.png");  
         chip1000 = new ImageView("/1000chip.png");
     }
 
@@ -395,10 +394,11 @@ public class PokerFX extends Application {
         raiseBox.setAlignment(Pos.CENTER);
         raiseBox.setVisible(false);
         raiseBox.setManaged(false);
-
+        lastActed = null;
         foldButton.setOnAction(e -> {
             if (!canAct())
                 return;
+            lastActed = game.getCurrentPlayer();
             soundEffects("/awwdangit.mp3");
             dealerCommentary.setText(game.getCurrentPlayer().getName() + " folded");
             game.fold();
@@ -416,6 +416,7 @@ public class PokerFX extends Application {
         callorcheckButton.setOnAction(e -> {
             if (!canAct())
                 return;
+            lastActed = game.getCurrentPlayer();
             if (game.canCheck()) {
                 dealerCommentary.setText(game.getCurrentPlayer().getName() + " checked");
                 soundEffects("/checkbutton.mp3");
@@ -446,6 +447,7 @@ public class PokerFX extends Application {
             if (!canAct())
                 return;
             try {
+                lastActed = game.getCurrentPlayer();
                 int amount = (int) raiseSlider.getValue();
                 if (!game.canRaiseBy(amount + game.getAmountToCall())) {
                     dealerCommentary.setText("ur too broke");
@@ -548,6 +550,7 @@ public class PokerFX extends Application {
         PauseTransition pause = new PauseTransition(Duration.seconds(0.75));
         ArrayList<Player> players = game.getPlayers();
         pause.setOnFinished(event -> {
+            lastActed = players.get(small);
             int[] smallUpdates = players.get(small).bet(game.getSmallBlind());
             game.addToPot(smallUpdates[1]);
             soundEffects("/pokerchips.mp3");
@@ -559,6 +562,7 @@ public class PokerFX extends Application {
             raiseButton.setDisable(true);
             PauseTransition pause2 = new PauseTransition(Duration.seconds(0.75));
             pause2.setOnFinished(event2 -> {
+                lastActed = players.get(big);
                 int[] bigUpdates = players.get(big).bet(game.getBigBlind());
                 game.addToPot(bigUpdates[1]);
                 soundEffects("/pokerchips.mp3");
@@ -586,10 +590,9 @@ public class PokerFX extends Application {
         });
         pause.play();
     }
-
-    /**
-     * Updates the call/check button to say Check, Call, or All In depending on the circumstances. 
-     */
+/**
+ * Updates the call/check button to say Check, Call, or All In depending on the circumstances. 
+ */
     private void updateButtons() {
         if (game.canCheck()) {
             callorcheckButton.setText("Check");
@@ -599,10 +602,9 @@ public class PokerFX extends Application {
             callorcheckButton.setText("All In");
         }
     }
-
-    /**
-     * Udates the information of the current player, including chips, community cards(each round), and ability to raise. Also makes sure cards are flipped back over at the start of each turn
-     */
+/**
+ * Udates the information of the current player, including chips, community cards(each round), and ability to raise. Also makes sure cards are flipped back over at the start of each turn
+ */
     private void updateCurrentPlayerInfo() {
         Player current = game.getCurrentPlayer();
         raiseSlider.setMax(Math.max(current.getChips() - game.getAmountToCall(), 0));
@@ -662,16 +664,7 @@ public class PokerFX extends Application {
             int amount = game.getPot() - tempChips;
             rootPane.applyCss();
             rootPane.layout();
-            VBox s;
-            if (game.getPot() > game.getSmallBlind() + game.getBigBlind()) {
-                int index = game.getCurrentIndex() - 1;
-                if (index < 0) {
-                    index += game.getPlayers().size();
-                }
-                s = seatBoxes.get(game.getOverallPlayers().indexOf(game.getPlayers().get(index)));
-            } else {
-                s = seatBoxes.get(game.getOverallPlayers().indexOf(game.getCurrentPlayer()));
-            }
+            VBox s = seatBoxes.get(game.getOverallPlayers().indexOf(lastActed));
             javafx.geometry.Point2D sourcePoint = rootPane
                     .sceneToLocal(s.localToScene(s.getWidth() / 2, s.getHeight() / 2));
 
@@ -800,7 +793,6 @@ public class PokerFX extends Application {
             tempChips = game.getPot();
         });
     }
-
     /**
      * Generates a stack of chips based on the info provided. Used in updatePot() to create stacks of chips in the middle.
      * @param stack the StackPane to add the chips to
@@ -809,6 +801,7 @@ public class PokerFX extends Application {
      * @param height the height to set the chips to
      * @param offset the vertical offset between chips for a stack effect
      */
+
     private void generateStack(StackPane stack, ImageView chip, int amount, int height, double offset) {
         for (int i = 0; i < amount; i++) {
             ImageView chipCopy = new ImageView(chip.getImage());
@@ -818,6 +811,7 @@ public class PokerFX extends Application {
             stack.getChildren().add(chipCopy);
         }
     }
+    private boolean winnershown = false;
 
     /** 
      * Refreshes the UI by updating the current player info, action state, buttons, and seats. Also handles the end of round animations (card reveals, player card showdown), and revealing the winner at the end of the game.
@@ -958,7 +952,7 @@ public class PokerFX extends Application {
                                                     pause4.setOnFinished(event4 -> {
                                                         dealerCommentary.setText("Here's the turn!");
                                                         PauseTransition pause5 = new PauseTransition(
-                                                                Duration.seconds(1));
+                                                                Duration.seconds(0.5));
                                                         pause5.setOnFinished(event5 -> {
                                                             cards.add(deck.chooseCard());
                                                             soundEffects("/cardflip.mp3");
@@ -1137,10 +1131,9 @@ public class PokerFX extends Application {
         }
         seat.getChildren().add(cardBack);
     }
-
-    /**
-     * Updates all seat boxes
-     */
+/**
+ * Updates all seat boxes
+ */
     private void updateSeats() {
         if (seatBoxes == null) {
             return;
@@ -1162,15 +1155,14 @@ public class PokerFX extends Application {
         cards.setImage(new Image(cardsURL.toExternalForm()));
         return cards;
     }
-
-    /**
+/**
      * Identifies players with 0 chips and gives them the option to re-enter the game with 1000 chips. Otherwise the player is removed from the game.
      */
     private void loan() {
         // identify broke people
         ArrayList<Player> brokePeople = new ArrayList<>();
         for (Player p : game.getPlayers()) {
-            if (p.getChips() <= 0) {//here
+            if (p.getChips() == 0) {
                 brokePeople.add(p);
             }
         }
@@ -1233,11 +1225,10 @@ public class PokerFX extends Application {
             pokerTable();
         }
     }
-
-    /**
-     * Returns if the current player can act
-     * @return true if the current player can act, false otherwise
-     */
+/**
+ * Returns if the current player can act
+ * @return true if the current player can act, false otherwise
+ */
     private boolean canAct() {
         if (game.getPlayers().size() <= 1)
             return false;
@@ -1245,8 +1236,7 @@ public class PokerFX extends Application {
             return false;
         return true;
     }
-
-    /**
+/**
      * Enables buttons there is more than one player
      */
     private void updateActionState() {
@@ -1257,9 +1247,9 @@ public class PokerFX extends Application {
         foldButton.setDisable(false);
         raiseButton.setDisable(false);
     }
-
     /**
     * Shows the winner screen. The winner screen includes the winner, their winning hand, and how many chips they won. Highlights the winner's seat. Gives the option to start a new round or end the game.
+     *
     */
     private void showWinnerScreen() {
         winnerLabel = new Label();
@@ -1270,12 +1260,9 @@ public class PokerFX extends Application {
             playerWins.put(name, wins+1);
         }
         int[] added = game.splitWinnings();
-        String hand;
-        if (game.getPlayers().size() > 1){
+        String hand = "";
+        if (game.getPlayers().size() > 1) {
             hand = game.handType(winners.get(0));
-        } 
-        else{
-            hand = "N/A"; // everyone else folded, so winner wins by default with no hand
         }
         middleBox.setTranslateY(15);
         if (added[0] > 1000) {
@@ -1383,7 +1370,6 @@ public class PokerFX extends Application {
         rootPane.getChildren().addAll(winnerLabel, anotherRound);
         winnershown = false;
     }
-
     /**
      * Ends the game by showing the final player stats, including chips and number of loans taken. Provides button to view credits.
      */
@@ -1541,7 +1527,4 @@ public class PokerFX extends Application {
         rootPane.getChildren().add(text);
     }
 
-    public static void main(String[] args) {
-        launch(args);
-    }
 }
