@@ -1,7 +1,9 @@
 package com.example;
 import java.util.*;
 /**
- * @authors Anna Chen, Sophia Fan, Vicky Qin
+ * @author Anna Chen
+ * @author Sophia Fan
+ * @author Vicky Qin
  * @date 5/27/2026
  * The Game class implements the logic for a game of poker. 
  * it inlcudes the deck, players, pot, blinds, cards on the table, and the flow of the game. 
@@ -115,6 +117,7 @@ public class Game {
     public int getSmallBlind(){
         return smallBlind;
     }
+
     /**
      * Returns the value of the big blind.
      * @return the big blind
@@ -322,10 +325,11 @@ public class Game {
         lastRaiser = players.get(firstPlayer);
         return;
     }
-/**
- * If multiple players win, the winnings (pot chips) are split up as evenly as possible 
- * @return an int[] representing the amount of chips each winning player receives from the pot. The order corresponds to the order of the winning players returned by findWinner().
- */
+
+    /**
+     * If multiple players win, the winnings (pot chips) are split up as evenly as possible 
+     * @return an int[] representing the amount of chips each winning player receives from the pot. The order corresponds to the order of the winning players returned by findWinner().
+     */
     public int[] splitWinnings(){
         ArrayList<Player> winners = findWinner();
         int[] added = new int[winners.size()];
@@ -350,22 +354,32 @@ public class Game {
         }
         return added;
     }
-/**
- * Finds the winner(s) of the hand by calculating the points of each player's hand and comparing them. If there are multiple players with the same highest points, they are all considered winners.
- * @return an ArrayList of the winning player(s)
- */
+    /**
+     * Finds the winner(s) of the hand by calculating the points of each player's hand and comparing them. If there are multiple players with the same highest points, they are all considered winners.
+     * @return an ArrayList of the winning player(s)
+     */
     public ArrayList<Player> findWinner() {
         ArrayList<Player> winners = new ArrayList<>();
-        int maxPoints = -1;
+        winners.add(players.get(0));
+        int[] rank = new Points(players.get(0).getCardOne(), players.get(0).getCardTwo(), cards).calculatePoints();
         for (Player p : players) {
-            PlayerPoints points = new PlayerPoints(p.getCardOne(), p.getCardTwo(), cards);
-            int playerPoint = 0;
-            playerPoint = points.calculatePoints();
-            if (playerPoint > maxPoints) {
-                maxPoints = playerPoint;
+            Points pointSystem = new Points(p.getCardOne(), p.getCardTwo(), cards);
+            int compare = 0;
+            int[] points = pointSystem.calculatePoints();
+            for (int i = 0; i < points.length; i++){
+                if (points[i]> rank[i]){
+                    compare = 1;
+                    break;
+                } else if (points[i] < rank[i]){
+                    compare = -1;
+                    break;
+                }
+            }
+            if (compare == 1){
                 winners.clear();
                 winners.add(p);
-            } else if (playerPoint == maxPoints) {
+                rank = points;
+            } else if (compare == 0 && p != winners.get(0)){
                 winners.add(p);
             }
         }
@@ -378,38 +392,40 @@ public class Game {
      * @return the player's best hand type as a String (e.g. "Full House")
      */
     public String handType(Player winner) {
-        PlayerPoints pointSystem = new PlayerPoints(winner.getCardOne(), winner.getCardTwo(), cards);
-        int points = pointSystem.calculatePoints();
-        if (points == 8300) {
+        Points pointSystem = new Points(winner.getCardOne(), winner.getCardTwo(), cards);
+        int[] points = pointSystem.calculatePoints();
+        int rank = points[0];
+        if (rank == 9) {
             return "Royal Flush";
         }
-        if (points >= 8050) {
+        if (rank == 8) {
             return "Straight Flush";
         }
-        if (points >= 7800) {
+        if (rank == 7) {
             return "Four of a Kind";
         }
-        if (points >= 4400) {
+        if (rank == 6) {
             return "Full House";
         }
-        if (points >= 4150) {
+        if (rank == 5) {
             return "Flush";
         }
-        if (points >= 3900) {
+        if (rank == 4) {
             return "Straight";
         }
-        if (points >= 3650) {
+        if (rank == 3) {
             return "Three of a Kind";
         }
-        if (points >= 250) {
+        if (rank == 2) {
             return "Two Pair";
         }
-        if (points >= 15) {
+        if (rank == 1) {
             return "Pair";
         } else {
             return "High Card";
         }
     }
+
     /**
      * Returns the list of players currently active in the round
      * @return the list of players currently active in the round
@@ -417,13 +433,18 @@ public class Game {
     public ArrayList<Player> getPlayers() {
         return players;
     }
+
     /**
      * Returns the current player whose turn it is to act.
      * @return current player in the game
      */
     public Player getCurrentPlayer(){
+        if (currentPlayer >= players.size()){
+            currentPlayer = 0;
+        }
         return players.get(currentPlayer);
     }
+
     /**
      * Returns the index of the current player in the players list.
      * @return index of the current player in the players list
@@ -431,6 +452,7 @@ public class Game {
     public int getCurrentIndex(){
         return currentPlayer;
     }
+
     /**
      * Returns the list of cards currently on the table (the middle cards).
      * @return middle cards
@@ -438,6 +460,7 @@ public class Game {
     public ArrayList<Card> getMiddleCards(){
         return cards;
     }
+
     /**
      * Returns the deck of cards being used in the game.
      * @return deck being used in the game
@@ -445,6 +468,7 @@ public class Game {
     public Deck getDeck(){
         return deck;
     }
+
     /**
      * Returns the highest bet in the current round
      * @return current bet in the round
@@ -452,6 +476,7 @@ public class Game {
     public int getCurrent(){
         return current;
     }
+
     /**
      * Returns the current round count (0 for pre-flop, 1 for flop, ... 4 for hand finished).
      * @return the round count
@@ -459,6 +484,7 @@ public class Game {
     public int getRoundCount(){
         return roundCount;
     }
+
     /**
      * Returns the list of all players who started the game, including those who dropped out due to insufficient money.
      * @return all players who started the game
@@ -466,6 +492,7 @@ public class Game {
     public ArrayList<Player> getOverallPlayers(){
         return overallPlayers;
     }
+
     /**
      * Returns the list of all players except those who dropped out due to insufficient money. Includes players who folded in the current round.
      * @return all players who started in the current round
@@ -473,6 +500,7 @@ public class Game {
     public ArrayList<Player> getPlayersReference(){
         return playersReference;
     }
+
     /**
      * sets the current player index to the specified value. 
      * @param c what the current player index should be set to
@@ -480,8 +508,9 @@ public class Game {
     public void setCurrentPlayer(int c){
         currentPlayer = c;
     }
+
     /**
-     * Removes a player from the game and updates the dealer index if necessary. This is used when a player denies a loan. Updates dealer index and player lists.
+     * Removes a player from the game and updates the dealer index when a player denies a loan. Updates dealer index and player lists.
      * @param p the player to remove
      */
     public void setInactive(Player p){
